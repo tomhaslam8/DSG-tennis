@@ -28,22 +28,23 @@ const MONTHS    = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","
 
 function generateSessions() {
   const today = new Date();
+  today.setHours(0,0,0,0);
   const sessions = [];
   let uid = 1;
-  for (let week = 0; week < 2; week++) {
-    WEEKLY_TEMPLATE.forEach(t => {
-      const d = new Date(today);
-      const currentDay = today.getDay() === 0 ? 7 : today.getDay();
-      const targetDay = t.day + 1;
-      let daysAhead = targetDay - currentDay + (week * 7);
-      if (daysAhead < 0) daysAhead += 7;
-      d.setDate(today.getDate() + daysAhead);
-      const dateStr = DAY_NAMES[t.day].slice(0,3) + " " + d.getDate() + " " + MONTHS[d.getMonth()];
-      const seed = t.id * 7 + week * 13;
+  // Show next 7 days of sessions only
+  for (let daysAhead = 0; daysAhead < 14; daysAhead++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + daysAhead);
+    const dayOfWeek = (d.getDay() + 6) % 7; // Convert Sun=0 to Mon=0
+    const daySessions = WEEKLY_TEMPLATE.filter(t => t.day === dayOfWeek);
+    if (!daySessions.length) continue;
+    const dateStr = DAY_NAMES[dayOfWeek].slice(0,3) + " " + d.getDate() + " " + MONTHS[d.getMonth()];
+    daySessions.forEach(t => {
+      const seed = t.id * 7 + daysAhead * 13;
       const booked = Math.floor((Math.sin(seed) * 0.5 + 0.5) * (t.cap * 0.7));
       sessions.push({
         id: uid++, name: t.name, level: t.level,
-        date: dateStr, day: DAY_NAMES[t.day],
+        date: dateStr, day: DAY_NAMES[dayOfWeek],
         time: t.time, end: t.end,
         type: t.type, credits: t.credits,
         spots: t.cap - booked, cap: t.cap,
