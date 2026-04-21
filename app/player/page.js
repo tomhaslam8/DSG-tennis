@@ -9,11 +9,23 @@ const supabase = createClient(
 
 export default function PlayerPage() {
   const [user, setUser] = useState(null);
+  const [playerName, setPlayerName] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) { window.location.href = '/login'; return; }
+      setUser(session.user);
+      const { data } = await supabase
+        .from('players')
+        .select('full_name')
+        .eq('id', session.user.id)
+        .single();
+      if (!data || !data.full_name || data.full_name === session.user.email.split('@')[0]) {
+        window.location.href = '/onboard';
+        return;
+      }
+      setPlayerName(data.full_name);
       setLoading(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -28,11 +40,6 @@ export default function PlayerPage() {
     </div>
   );
 
-  if (!user) {
-    if (typeof window !== 'undefined') window.location.href = '/login';
-    return null;
-  }
-
   const PlayerApp = require('../../components/PlayerApp').default;
-  return <PlayerApp user={user} />;
+  return <PlayerApp user={user} playerName={playerName} />;
 }

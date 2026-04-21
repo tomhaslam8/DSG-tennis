@@ -55,14 +55,14 @@ function generateSessions() {
 
 const SESSIONS = generateSessions();
 
-export default function PlayerApp({ user }) {
+export default function PlayerApp({ user, playerName }) {
   const [pview, setPview]       = useState('home');
   const [selected, setSelected] = useState(null);
   const [packData, setPackData] = useState(null);
   const [loading, setLoading]   = useState(true);
   const [bookings, setBookings] = useState([]);
 
-  const firstName = user?.email?.split('@')[0] || 'there';
+  const firstName = playerName || user?.email?.split('@')[0] || 'there';
 
   useEffect(() => {
     loadPackData();
@@ -195,7 +195,8 @@ export default function PlayerApp({ user }) {
                       {SESSIONS.find(s=>s.day===day).date}
                     </div>
                     {SESSIONS.filter(s=>s.day===day).map(s => {
-                      const canAfford = s.type === 'social' ? (socialCredits > 0 || credits >= 1) : credits >= s.credits;
+                      const hasSocialCredit = socialCredits > 0;
+                      const canAfford = (s.type === 'social' && !hasSocialCredit) ? credits >= 1 : s.type === 'social' ? true : credits >= s.credits;
                       const available = s.spots > 0 && canAfford;
                       return (
                         <button key={s.id} onClick={() => available && doBook(s)} disabled={!available} style={{ width:'100%', display:'flex', justifyContent:'space-between', alignItems:'flex-start', background:'#fff', border:'0.5px solid #e8e8e8', borderRadius:12, padding:'10px 12px', marginBottom:6, cursor:available?'pointer':'default', textAlign:'left', opacity:!available?0.45:1, fontFamily:'inherit' }}>
