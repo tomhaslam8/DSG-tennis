@@ -72,7 +72,7 @@ export default function PlayerApp({ user }) {
     if (!user) return;
     const { data } = await supabase
       .from('player_packs')
-      .select('*, packs(name)')
+      .select('*, packs(name), social_credits')
       .eq('player_id', user.id)
       .eq('status', 'active')
       .order('purchased_at', { ascending: false })
@@ -83,6 +83,7 @@ export default function PlayerApp({ user }) {
   }
 
   const credits = packData ? packData.credits_total - packData.credits_used : 0;
+  const socialCredits = packData?.social_credits || 0;
   const packTotal = packData?.credits_total || 12;
   const packName = packData?.packs?.name || 'No active pack';
   const used = packTotal - credits;
@@ -142,6 +143,7 @@ export default function PlayerApp({ user }) {
                     <div style={{ height:4, background:'#0F6E56', borderRadius:2, width:`${Math.min((used/packTotal)*100,100)}%` }} />
                   </div>
                   <div style={{ fontSize:10, color:'#0F6E56' }}>{used} of {packTotal} used</div>
+                  {socialCredits > 0 && <div style={{ marginTop:8, display:'inline-block', fontSize:11, padding:'3px 10px', borderRadius:20, background:'#EEEDFE', color:'#3C3489', fontWeight:500 }}>Social ticket included</div>}
                 </div>
               )}
 
