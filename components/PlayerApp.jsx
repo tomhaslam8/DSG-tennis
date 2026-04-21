@@ -144,7 +144,6 @@ export default function PlayerApp({ user }) {
                     <div style={{ height:4, background:'#0F6E56', borderRadius:2, width:`${Math.min((used/packTotal)*100,100)}%` }} />
                   </div>
                   <div style={{ fontSize:10, color:'#0F6E56' }}>{used} of {packTotal} used</div>
-                  {socialCredits > 0 && <div style={{ width:28, height:28, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, fontWeight:600, background:'#EEEDFE', color:'#3C3489', border:'1.5px solid #AFA9EC' }}>social</div>}
                 </div>
               )}
 
