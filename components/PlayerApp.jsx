@@ -138,12 +138,13 @@ export default function PlayerApp({ user }) {
                         {i < used ? '✓' : i+1}
                       </div>
                     ))}
+                    {socialCredits > 0 && <div style={{ width:28, height:28, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, fontWeight:600, background:'#EEEDFE', color:'#3C3489', border:'1.5px solid #AFA9EC' }}>social</div>}
                   </div>
                   <div style={{ height:4, background:'#9FE1CB', borderRadius:2, marginBottom:4 }}>
                     <div style={{ height:4, background:'#0F6E56', borderRadius:2, width:`${Math.min((used/packTotal)*100,100)}%` }} />
                   </div>
                   <div style={{ fontSize:10, color:'#0F6E56' }}>{used} of {packTotal} used</div>
-                  {socialCredits > 0 && <div style={{ width:40, height:40, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, fontWeight:600, background:'#EEEDFE', color:'#3C3489', border:'1.5px solid #AFA9EC', marginTop:4 }}>social</div>}
+                  {socialCredits > 0 && <div style={{ width:28, height:28, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, fontWeight:600, background:'#EEEDFE', color:'#3C3489', border:'1.5px solid #AFA9EC' }}>social</div>}
                 </div>
               )}
 
