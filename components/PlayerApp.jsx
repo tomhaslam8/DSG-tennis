@@ -91,8 +91,12 @@ export default function PlayerApp({ user }) {
   function doBook(s) { setSelected(s); setPview('confirm'); }
 
   async function doConfirm() {
-    const newUsed = packData.credits_used + selected.credits;
-    await supabase.from('player_packs').update({ credits_used: newUsed }).eq('id', packData.id);
+    const isSocial = selected.type === 'social';
+    const useSocialCredit = isSocial && packData.social_credits > 0;
+    const newUsed = useSocialCredit ? packData.credits_used : packData.credits_used + selected.credits;
+    const newSocial = useSocialCredit ? packData.social_credits - 1 : packData.social_credits;
+    await supabase.from('player_packs').update({ credits_used: newUsed, social_credits: newSocial }).eq('id', packData.id);
+    setPackData(p => ({ ...p, credits_used: newUsed, social_credits: newSocial }));
     setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming' }, ...b]);
     setPackData(p => ({ ...p, credits_used: newUsed }));
     setPview('success');
@@ -191,7 +195,7 @@ export default function PlayerApp({ user }) {
                       {SESSIONS.find(s=>s.day===day).date}
                     </div>
                     {SESSIONS.filter(s=>s.day===day).map(s => {
-                      const canAfford = credits >= s.credits;
+                      const canAfford = s.type === 'social' ? (socialCredits > 0 || credits >= 1) : credits >= s.credits;
                       const available = s.spots > 0 && canAfford;
                       return (
                         <button key={s.id} onClick={() => available && doBook(s)} disabled={!available} style={{ width:'100%', display:'flex', justifyContent:'space-between', alignItems:'flex-start', background:'#fff', border:'0.5px solid #e8e8e8', borderRadius:12, padding:'10px 12px', marginBottom:6, cursor:available?'pointer':'default', textAlign:'left', opacity:!available?0.45:1, fontFamily:'inherit' }}>
@@ -202,7 +206,7 @@ export default function PlayerApp({ user }) {
                               {s.spots===0?'Full':!canAfford?'Not enough credits':`${s.spots} spot${s.spots!==1?'s':''} left`}
                             </div>
                           </div>
-                          <div style={{ fontSize:10, padding:'2px 8px', borderRadius:20, background: s.credits===1?'#E1F5EE':'#EEEDFE', color: s.credits===1?'#0F6E56':'#3C3489', fontWeight:500, whiteSpace:'nowrap', flexShrink:0, marginLeft:8, marginTop:2 }}>{s.credits === 1 ? '1 credit' : '1.5 credits'}</div>
+                          <div style={{ fontSize:10, padding:'2px 8px', borderRadius:20, background: s.type==='social'&&socialCredits>0?'#EEEDFE':s.credits===1?'#E1F5EE':'#EEEDFE', color: s.type==='social'&&socialCredits>0?'#3C3489':s.credits===1?'#0F6E56':'#3C3489', fontWeight:500, whiteSpace:'nowrap', flexShrink:0, marginLeft:8, marginTop:2 }}>{s.type === 'social' ? (socialCredits > 0 ? '1 social credit' : '1 credit') : s.credits === 1 ? '1 credit' : '1.5 credits'}</div>
                         </button>
                       );
                     })}
