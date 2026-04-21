@@ -143,7 +143,7 @@ export default function PlayerApp({ user }) {
                     <div style={{ height:4, background:'#0F6E56', borderRadius:2, width:`${Math.min((used/packTotal)*100,100)}%` }} />
                   </div>
                   <div style={{ fontSize:10, color:'#0F6E56' }}>{used} of {packTotal} used</div>
-                  {socialCredits > 0 && <div style={{ marginTop:8, display:'inline-block', fontSize:11, padding:'3px 10px', borderRadius:20, background:'#EEEDFE', color:'#3C3489', fontWeight:500 }}>Social ticket included</div>}
+                  {socialCredits > 0 && <div style={{ width:40, height:40, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, fontWeight:600, background:'#EEEDFE', color:'#3C3489', border:'1.5px solid #AFA9EC', marginTop:4 }}>social</div>}
                 </div>
               )}
 
