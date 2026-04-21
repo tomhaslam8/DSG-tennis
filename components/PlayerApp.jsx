@@ -156,7 +156,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                     <div style={{ fontSize:10, color:'#aaa', marginTop:1 }}>Total sessions</div>
                   </div>
                   <div style={{ background:'#f5f5f5', borderRadius:10, padding:'8px', textAlign:'center' }}>
-                    <div style={{ fontSize:18, fontWeight:700, color:'#1D9E75' }}>{playerData.sessions_this_month || 0}</div>
+                    <div style={{ fontSize:18, fontWeight:700, color: (playerData.sessions_this_month||0) > 0 ? '#1D9E75' : '#0a0a0a' }}>{playerData.sessions_this_month || 0}</div>
                     <div style={{ fontSize:10, color:'#aaa', marginTop:1 }}>This month</div>
                   </div>
                   <div style={{ background:'#f5f5f5', borderRadius:10, padding:'8px', textAlign:'center' }}>
@@ -214,8 +214,8 @@ export default function PlayerApp({ user, playerName, playerData }) {
 
               <button onClick={() => setPview('book')} style={{ width:'100%', padding:12, borderRadius:12, background:'#1D9E75', color:'#fff', border:'none', fontSize:14, fontWeight:600, cursor:'pointer', marginBottom:8 }}>Book a session</button>
 
-              {/* Leaderboard */}
-              <div style={{ marginBottom:14 }}>
+              {/* Leaderboard — only show when someone has sessions */}
+              {leaderboard.some(p => (p.sessions_this_month||0) > 0) && <div style={{ marginBottom:14 }}>
                 <div style={{ fontSize:10, fontWeight:600, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.06em', margin:'14px 0 8px', display:'flex', justifyContent:'space-between' }}>
                   <span>This month's leaderboard</span>
                   <span style={{ color:'#1D9E75' }}>Top 10</span>
@@ -239,6 +239,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                 })}
               </div>
 
+              }
               {bookings.filter(b=>b.status==='upcoming').length > 0 && (
                 <>
                   <div style={{ fontSize:10, fontWeight:600, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.06em', margin:'14px 0 8px' }}>Coming up</div>
