@@ -249,7 +249,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                         {i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}
                       </div>
                       <div style={{ flex:1, fontSize:13, fontWeight: isMe?600:400, color: isMe?'#085041':'#0a0a0a' }}>{display}{isMe?' (you)':''}</div>
-                      <div style={{ fontSize:12, fontWeight:600, color: isMe?'#0F6E56':'#888' }}>{p.sessions_this_month || 0} sessions</div>
+                      <div style={{ fontSize:12, fontWeight:600, color: isMe?'#0F6E56':'#888' }}>{p.sessions_this_month || 0} session{(p.sessions_this_month||0) !== 1 ? 's' : ''}</div>
                     </div>
                   );
                 })}
