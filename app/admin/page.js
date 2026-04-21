@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import SessionManager from './SessionManager';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -181,10 +182,7 @@ export default function AdminDashboard() {
         )}
 
         {tab === 'sessions' && (
-          <div>
-            <div style={{ fontSize:15, fontWeight:600, marginBottom:16 }}>Sessions</div>
-            <div style={{ fontSize:13, color:'#aaa' }}>Session management coming soon — will show live bookings per session, capacity, and waitlist.</div>
-          </div>
+          <SessionManager supabase={supabase} />
         )}
 
         {tab === 'revenue' && (
