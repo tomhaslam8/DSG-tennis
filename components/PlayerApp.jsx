@@ -225,13 +225,6 @@ export default function PlayerApp({ user, playerName, playerData }) {
                     <div style={{ fontSize:13, fontWeight:600, color:'#0a0a0a', marginBottom:4 }}>No one's on the board yet</div>
                     <div style={{ fontSize:12, color:'#1D9E75', fontWeight:500 }}>Book a session to be first →</div>
                   </div>
-                ) :
-                <div style={{ fontSize:10, fontWeight:600, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.06em', margin:'14px 0 8px', display:'flex', justifyContent:'space-between' }}>
-                  <span>This month's leaderboard</span>
-                  <span style={{ color:'#1D9E75' }}>Top 10</span>
-                </div>
-                {leaderboard.length === 0 ? (
-                  <div style={{ fontSize:12, color:'#aaa', textAlign:'center', padding:'1rem 0' }}>No sessions yet this month</div>
                 ) : leaderboard.map((p, i) => {
                   const nameParts = (p.full_name || 'Player').split(' ');
                   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -240,7 +233,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                   return (
                     <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:10, background: isMe ? '#E1F5EE' : i===0 ? '#FFFDE7' : 'transparent', marginBottom:4 }}>
                       <div style={{ fontSize:13, fontWeight:700, color: i===0?'#F9A825':i===1?'#9E9E9E':i===2?'#8D6E63':'#aaa', minWidth:20, textAlign:'center' }}>
-                        {i===0&&(p.sessions_this_month||0)>0?'🥇':i===1&&(p.sessions_this_month||0)>0?'🥈':i===2&&(p.sessions_this_month||0)>0?'🥉':i+1}
+                        {i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}
                       </div>
                       <div style={{ flex:1, fontSize:13, fontWeight: isMe?600:400, color: isMe?'#085041':'#0a0a0a' }}>{display}{isMe?' (you)':''}</div>
                       <div style={{ fontSize:12, fontWeight:600, color: isMe?'#0F6E56':'#888' }}>{p.sessions_this_month || 0} sessions</div>
@@ -249,8 +242,6 @@ export default function PlayerApp({ user, playerName, playerData }) {
                 })}
               </div>
 
-              }
-              </div>
               {bookings.filter(b=>b.status==='upcoming').length > 0 && (
                 <>
                   <div style={{ fontSize:10, fontWeight:600, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.06em', margin:'14px 0 8px' }}>Coming up</div>
