@@ -9,8 +9,8 @@ const supabase = createClient(
 );
 
 const PACK_CONFIG = {
-  discover: { credits: 3,  expiryDays: 21 },
-  join10:   { credits: 12, expiryDays: null },
+  discover: { credits: 3,  expiryDays: 21,  name: 'Discover' },
+  join10:   { credits: 12, expiryDays: null, name: 'Join 10'  },
 };
 
 export async function POST(req) {
@@ -21,26 +21,48 @@ export async function POST(req) {
   try {
     event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
+    console.error('Webhook signature failed:', err.message);
     return NextResponse.json({ error: 'Webhook signature failed' }, { status: 400 });
   }
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const { userId, packId } = session.metadata;
+    const { userId, packId } = session.metadata || {};
     const config = PACK_CONFIG[packId];
-    if (!config || !userId) return NextResponse.json({ received: true });
 
-    const { data: packRow } = await supabase
+    console.log('Webhook received:', { userId, packId, email: session.customer_email });
+
+    if (!config || !userId) {
+      console.error('Missing config or userId', { userId, packId });
+      return NextResponse.json({ received: true });
+    }
+
+    // Upsert player first
+    const { error: playerError } = await supabase.from('players').upsert({
+      id:        userId,
+      email:     session.customer_email || '',
+      full_name: (session.customer_email || '').split('@')[0],
+    }, { onConflict: 'id' });
+
+    if (playerError) console.error('Player upsert error:', playerError);
+
+    // Get pack id
+    const { data: packRow, error: packError } = await supabase
       .from('packs')
       .select('id')
-      .eq('name', packId === 'discover' ? 'Discover' : 'Join 10')
+      .eq('name', config.name)
       .single();
+
+    if (packError || !packRow) {
+      console.error('Pack not found:', config.name, packError);
+      return NextResponse.json({ received: true });
+    }
 
     const expiresAt = config.expiryDays
       ? new Date(Date.now() + config.expiryDays * 86400000).toISOString()
       : null;
 
-    await supabase.from('player_packs').insert({
+    const { error: packInsertError } = await supabase.from('player_packs').insert({
       player_id:     userId,
       pack_id:       packRow.id,
       credits_total: config.credits,
@@ -50,11 +72,8 @@ export async function POST(req) {
       expires_at:    expiresAt,
     });
 
-    await supabase.from('players').upsert({
-      id:    userId,
-      email: session.customer_email,
-      full_name: session.customer_email.split('@')[0],
-    }, { onConflict: 'id' });
+    if (packInsertError) console.error('Pack insert error:', packInsertError);
+    else console.log('Pack created successfully for', userId);
   }
 
   return NextResponse.json({ received: true });
