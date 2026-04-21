@@ -110,7 +110,7 @@ export default function AdminDashboard() {
               ].map(s => (
                 <div key={s.l} style={{ background:'#f5f5f5', borderRadius:10, padding:'12px 14px' }}>
                   <div style={{ fontSize:11, color:'#aaa', marginBottom:4 }}>{s.l}</div>
-                  <div style={{ fontSize:22, fontWeight:600, color: s.c==='good'?'#1D9E75':s.c==='warn'?'#BA7517':'#0a0a0a' }}>{v: s.v}</div>
+                  <div style={{ fontSize:22, fontWeight:600, color: s.c==='good'?'#1D9E75':s.c==='warn'?'#BA7517':'#0a0a0a' }}>{s.v}</div>
                 </div>
               ))}
             </div>
