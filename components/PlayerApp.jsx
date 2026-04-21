@@ -63,6 +63,8 @@ export default function PlayerApp({ user, playerName, playerData }) {
   const [bookings, setBookings] = useState([]);
   const [localStats, setLocalStats] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [hallOfFame, setHallOfFame] = useState([]);
+  const [boardTab, setBoardTab] = useState('monthly');
   const [loadingBoard, setLoadingBoard] = useState(true);
 
   const rawName = playerName || user?.email?.split('@')[0] || 'there';
@@ -75,12 +77,12 @@ export default function PlayerApp({ user, playerName, playerData }) {
   }, [user]);
 
   async function loadLeaderboard() {
-    const { data } = await supabase
-      .from('players')
-      .select('full_name, sessions_this_month, total_sessions, streak_weeks')
-      .order('sessions_this_month', { ascending: false })
-      .limit(10);
-    if (data) setLeaderboard(data);
+    const [monthly, allTime] = await Promise.all([
+      supabase.from('players').select('full_name, sessions_this_month, total_sessions, streak_weeks').order('sessions_this_month', { ascending: false }).limit(10),
+      supabase.from('players').select('full_name, sessions_this_month, total_sessions, streak_weeks').order('total_sessions', { ascending: false }).limit(10),
+    ]);
+    if (monthly.data) setLeaderboard(monthly.data);
+    if (allTime.data) setHallOfFame(allTime.data);
     setLoadingBoard(false);
   }
 
@@ -243,16 +245,16 @@ export default function PlayerApp({ user, playerName, playerData }) {
 
               {/* Leaderboard */}
               <div style={{ marginBottom:14 }}>
-                <div style={{ fontSize:10, fontWeight:600, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.06em', margin:'14px 0 8px', display:'flex', justifyContent:'space-between' }}>
-                  <span>This month's leaderboard</span>
-                  <span style={{ color:'#1D9E75' }}>Top 10</span>
+                <div style={{ display:'flex', gap:6, margin:'14px 0 10px' }}>
+                  <button onClick={()=>setBoardTab('monthly')} style={{ fontSize:11, padding:'3px 12px', borderRadius:20, border:'0.5px solid #e0e0e0', background: boardTab==='monthly'?'#1D9E75':'transparent', color: boardTab==='monthly'?'#fff':'#888', cursor:'pointer', fontFamily:'inherit', fontWeight:500 }}>This month</button>
+                  <button onClick={()=>setBoardTab('alltime')} style={{ fontSize:11, padding:'3px 12px', borderRadius:20, border:'0.5px solid #e0e0e0', background: boardTab==='alltime'?'#1D9E75':'transparent', color: boardTab==='alltime'?'#fff':'#888', cursor:'pointer', fontFamily:'inherit', fontWeight:500 }}>All time 🏆</button>
                 </div>
-                {!leaderboard.some(p => (p.sessions_this_month||0) > 0) ? (
+                {boardTab === 'monthly' && !leaderboard.some(p => (p.sessions_this_month||0) > 0) ? (
                   <div onClick={() => setPview('book')} style={{ background:'#f5f5f5', borderRadius:12, padding:'14px', textAlign:'center', cursor:'pointer' }}>
                     <div style={{ fontSize:13, fontWeight:600, color:'#0a0a0a', marginBottom:4 }}>No one's on the board yet</div>
                     <div style={{ fontSize:12, color:'#1D9E75', fontWeight:500 }}>Book a session to be first →</div>
                   </div>
-                ) : leaderboard.map((p, i) => {
+                ) : (boardTab === 'monthly' ? leaderboard : hallOfFame).map((p, i) => {
                   const nameParts = (p.full_name || 'Player').split(' ');
                   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
                   const display = nameParts.length > 1 ? cap(nameParts[0]) + ' ' + nameParts[1][0].toUpperCase() + '.' : cap(nameParts[0]);
@@ -263,7 +265,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                         {i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}
                       </div>
                       <div style={{ flex:1, fontSize:13, fontWeight: isMe?600:400, color: isMe?'#085041':'#0a0a0a' }}>{display}{isMe?' (you)':''}</div>
-                      <div style={{ fontSize:12, fontWeight:600, color: isMe?'#0F6E56':'#888' }}>{p.sessions_this_month || 0} session{(p.sessions_this_month||0) !== 1 ? 's' : ''}</div>
+                      <div style={{ fontSize:12, fontWeight:600, color: isMe?'#0F6E56':'#888' }}>{boardTab==='monthly' ? (p.sessions_this_month||0) : (p.total_sessions||0)} session{((boardTab==='monthly'?(p.sessions_this_month||0):(p.total_sessions||0)) !== 1) ? 's' : ''}</div>
                     </div>
                   );
                 })}
