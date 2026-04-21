@@ -119,6 +119,8 @@ export default function PlayerApp({ user, playerName, playerData }) {
       total_sessions: newTotal,
       sessions_this_month: newMonthly,
     }).eq('id', user.id);
+    // Reload leaderboard so stats show immediately
+    loadLeaderboard();
     setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming' }, ...b]);
     setPackData(p => ({ ...p, credits_used: newUsed }));
     setPview('success');
