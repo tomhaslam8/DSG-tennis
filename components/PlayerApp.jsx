@@ -104,6 +104,20 @@ export default function PlayerApp({ user, playerName, playerData }) {
   const packName = packData?.packs?.name || 'No active pack';
   const used = packTotal - credits;
 
+  async function cancelBooking(booking) {
+    if (!window.confirm('Cancel this booking? Your credit will be refunded.')) return;
+    // Refund credit
+    const isSocial = booking.type === 'social';
+    if (isSocial) {
+      await supabase.from('player_packs').update({ social_credits: (packData.social_credits || 0) + 1 }).eq('id', packData.id);
+      setPackData(p => ({ ...p, social_credits: (p.social_credits || 0) + 1 }));
+    } else {
+      await supabase.from('player_packs').update({ credits_used: packData.credits_used - 1 }).eq('id', packData.id);
+      setPackData(p => ({ ...p, credits_used: p.credits_used - 1 }));
+    }
+    setBookings(bs => bs.filter(b => b.id !== booking.id));
+  }
+
   function doBook(s) { setSelected(s); setPview('confirm'); }
 
   async function doConfirm() {
@@ -255,19 +269,28 @@ export default function PlayerApp({ user, playerName, playerData }) {
                 })}
               </div>
 
-              {bookings.filter(b=>b.status==='upcoming').length > 0 && (
+{bookings.filter(b=>b.status==='upcoming').length > 0 && (
                 <>
                   <div style={{ fontSize:10, fontWeight:600, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.06em', margin:'14px 0 8px' }}>Coming up</div>
-                  {bookings.filter(b=>b.status==='upcoming').slice(0,2).map(b => (
-                    <div key={b.id} style={{ display:'flex', alignItems:'center', gap:10, background:'#f5f5f5', borderRadius:10, padding:'10px 12px', marginBottom:6 }}>
-                      <div style={{ width:7, height:7, borderRadius:'50%', background:'#1D9E75', flexShrink:0 }} />
-                      <div style={{ flex:1 }}>
-                        <div style={{ fontSize:12, fontWeight:500 }}>{b.name}</div>
-                        <div style={{ fontSize:11, color:'#888', marginTop:1 }}>{b.date} · {b.time}</div>
+                  {bookings.filter(b=>b.status==='upcoming').slice(0,2).map(b => {
+                    const sessionDateTime = b.sessionDate ? new Date(b.sessionDate) : null;
+                    const hoursUntil = sessionDateTime ? (sessionDateTime - new Date()) / 3600000 : 999;
+                    const canCancel = hoursUntil > 12;
+                    return (
+                      <div key={b.id} style={{ display:'flex', alignItems:'center', gap:10, background:'#f5f5f5', borderRadius:10, padding:'10px 12px', marginBottom:6 }}>
+                        <div style={{ width:7, height:7, borderRadius:'50%', background:'#1D9E75', flexShrink:0 }} />
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontSize:12, fontWeight:500 }}>{b.name}</div>
+                          <div style={{ fontSize:11, color:'#888', marginTop:1 }}>{b.date} · {b.time}</div>
+                        </div>
+                        {canCancel ? (
+                          <button onClick={() => cancelBooking(b)} style={{ fontSize:11, padding:'3px 8px', borderRadius:6, border:'0.5px solid #e0e0e0', background:'transparent', color:'#E24B4A', cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+                        ) : (
+                          <span style={{ fontSize:10, color:'#854F0B', fontWeight:500, background:'#FAEEDA', padding:'2px 7px', borderRadius:20 }}>Locked</span>
+                        )}
                       </div>
-                      <div style={{ fontSize:11, color:'#0F6E56', fontWeight:500 }}>Booked</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </>
               )}
             </div>
