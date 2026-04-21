@@ -61,6 +61,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
   const [packData, setPackData] = useState(null);
   const [loading, setLoading]   = useState(true);
   const [bookings, setBookings] = useState([]);
+  const [localStats, setLocalStats] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [loadingBoard, setLoadingBoard] = useState(true);
 
@@ -70,6 +71,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
   useEffect(() => {
     loadPackData();
     loadLeaderboard();
+    if (playerData) setLocalStats({ total: playerData.total_sessions||0, monthly: playerData.sessions_this_month||0 });
   }, [user]);
 
   async function loadLeaderboard() {
@@ -119,11 +121,8 @@ export default function PlayerApp({ user, playerName, playerData }) {
       total_sessions: newTotal,
       sessions_this_month: newMonthly,
     }).eq('id', user.id);
-    // Update local playerData so stats show immediately
-    if (playerData) {
-      playerData.total_sessions = newTotal;
-      playerData.sessions_this_month = newMonthly;
-    }
+    // Update local stats state
+    setLocalStats({ total: newTotal, monthly: newMonthly });
     loadLeaderboard();
     setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming' }, ...b]);
     setPackData(p => ({ ...p, credits_used: newUsed }));
@@ -166,11 +165,11 @@ export default function PlayerApp({ user, playerName, playerData }) {
               {playerData && (
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:12 }}>
                   <div style={{ background:'#f5f5f5', borderRadius:10, padding:'8px', textAlign:'center' }}>
-                    <div style={{ fontSize:18, fontWeight:700, color:'#0a0a0a' }}>{playerData.total_sessions || 0}</div>
+                    <div style={{ fontSize:18, fontWeight:700, color:'#0a0a0a' }}>{localStats?.total ?? playerData.total_sessions ?? 0}</div>
                     <div style={{ fontSize:10, color:'#aaa', marginTop:1 }}>Total sessions</div>
                   </div>
                   <div style={{ background:'#f5f5f5', borderRadius:10, padding:'8px', textAlign:'center' }}>
-                    <div style={{ fontSize:18, fontWeight:700, color: (playerData.sessions_this_month||0) > 0 ? '#1D9E75' : '#0a0a0a' }}>{playerData.sessions_this_month || 0}</div>
+                    <div style={{ fontSize:18, fontWeight:700, color: (localStats?.monthly ?? playerData.sessions_this_month ?? 0) > 0 ? '#1D9E75' : '#0a0a0a' }}>{localStats?.monthly ?? playerData.sessions_this_month ?? 0}</div>
                     <div style={{ fontSize:10, color:'#aaa', marginTop:1 }}>This month</div>
                   </div>
                   <div style={{ background:'#f5f5f5', borderRadius:10, padding:'8px', textAlign:'center' }}>
