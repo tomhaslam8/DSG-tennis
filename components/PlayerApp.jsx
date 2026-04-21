@@ -111,6 +111,14 @@ export default function PlayerApp({ user, playerName, playerData }) {
     const newSocial = useSocialCredit ? packData.social_credits - 1 : packData.social_credits;
     await supabase.from('player_packs').update({ credits_used: newUsed, social_credits: newSocial }).eq('id', packData.id);
     setPackData(p => ({ ...p, credits_used: newUsed, social_credits: newSocial }));
+
+    // Update player stats
+    const newTotal = (playerData?.total_sessions || 0) + 1;
+    const newMonthly = (playerData?.sessions_this_month || 0) + 1;
+    await supabase.from('players').update({
+      total_sessions: newTotal,
+      sessions_this_month: newMonthly,
+    }).eq('id', user.id);
     setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming' }, ...b]);
     setPackData(p => ({ ...p, credits_used: newUsed }));
     setPview('success');
