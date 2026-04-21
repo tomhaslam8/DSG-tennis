@@ -21,7 +21,7 @@ export default function PlayerPage() {
         .select('full_name')
         .eq('id', session.user.id)
         .single();
-      if (!data || !data.full_name || data.full_name === session.user.email.split('@')[0]) {
+      if (!data || !data.full_name) {
         window.location.href = '/onboard';
         return;
       }
