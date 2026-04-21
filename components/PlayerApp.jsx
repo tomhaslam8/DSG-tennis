@@ -55,18 +55,31 @@ function generateSessions() {
 
 const SESSIONS = generateSessions();
 
-export default function PlayerApp({ user, playerName }) {
+export default function PlayerApp({ user, playerName, playerData }) {
   const [pview, setPview]       = useState('home');
   const [selected, setSelected] = useState(null);
   const [packData, setPackData] = useState(null);
   const [loading, setLoading]   = useState(true);
   const [bookings, setBookings] = useState([]);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loadingBoard, setLoadingBoard] = useState(true);
 
   const firstName = playerName || user?.email?.split('@')[0] || 'there';
 
   useEffect(() => {
     loadPackData();
+    loadLeaderboard();
   }, [user]);
+
+  async function loadLeaderboard() {
+    const { data } = await supabase
+      .from('players')
+      .select('full_name, sessions_this_month, total_sessions, streak_weeks')
+      .order('sessions_this_month', { ascending: false })
+      .limit(10);
+    if (data) setLeaderboard(data);
+    setLoadingBoard(false);
+  }
 
   async function loadPackData() {
     if (!user) return;
@@ -120,10 +133,50 @@ export default function PlayerApp({ user, playerName }) {
 
           {pview === 'home' && (
             <div style={{ paddingBottom:16 }}>
-              <div style={{ padding:'12px 0 14px' }}>
-                <div style={{ fontSize:11, color:'#aaa' }}>Good morning</div>
-                <div style={{ fontSize:22, fontWeight:600, lineHeight:1.2, marginTop:2, color:'#0a0a0a' }}>{firstName}</div>
+              <div style={{ padding:'12px 0 10px', display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+                <div>
+                  <div style={{ fontSize:11, color:'#aaa' }}>Good morning</div>
+                  <div style={{ fontSize:22, fontWeight:600, lineHeight:1.2, marginTop:2, color:'#0a0a0a' }}>{firstName}</div>
+                </div>
+                {playerData?.streak_weeks > 0 && (
+                  <div style={{ display:'flex', flexDirection:'column', alignItems:'center', background:'#FFF3E0', borderRadius:12, padding:'8px 12px' }}>
+                    <div style={{ fontSize:20 }}>🔥</div>
+                    <div style={{ fontSize:13, fontWeight:700, color:'#E65100' }}>{playerData.streak_weeks}</div>
+                    <div style={{ fontSize:9, color:'#BF360C', fontWeight:500 }}>WEEK STREAK</div>
+                  </div>
+                )}
               </div>
+
+              {/* Personal stats bar */}
+              {playerData && (
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:12 }}>
+                  <div style={{ background:'#f5f5f5', borderRadius:10, padding:'8px', textAlign:'center' }}>
+                    <div style={{ fontSize:18, fontWeight:700, color:'#0a0a0a' }}>{playerData.total_sessions || 0}</div>
+                    <div style={{ fontSize:10, color:'#aaa', marginTop:1 }}>Total sessions</div>
+                  </div>
+                  <div style={{ background:'#f5f5f5', borderRadius:10, padding:'8px', textAlign:'center' }}>
+                    <div style={{ fontSize:18, fontWeight:700, color:'#1D9E75' }}>{playerData.sessions_this_month || 0}</div>
+                    <div style={{ fontSize:10, color:'#aaa', marginTop:1 }}>This month</div>
+                  </div>
+                  <div style={{ background:'#f5f5f5', borderRadius:10, padding:'8px', textAlign:'center' }}>
+                    <div style={{ fontSize:18, fontWeight:700, color:'#E65100' }}>{playerData.streak_weeks || 0}</div>
+                    <div style={{ fontSize:10, color:'#aaa', marginTop:1 }}>Week streak</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Weekly goal progress */}
+              {playerData?.play_frequency && (
+                <div style={{ background:'#E1F5EE', borderRadius:12, padding:'10px 14px', marginBottom:12 }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+                    <div style={{ fontSize:12, fontWeight:600, color:'#085041' }}>This week's goal</div>
+                    <div style={{ fontSize:11, color:'#0F6E56' }}>{playerData.sessions_this_month || 0}/{playerData.play_frequency}x</div>
+                  </div>
+                  <div style={{ height:4, background:'#9FE1CB', borderRadius:2 }}>
+                    <div style={{ height:4, background:'#0F6E56', borderRadius:2, width:`${Math.min(((playerData.sessions_this_month||0)/parseInt(playerData.play_frequency))*100,100)}%`, transition:'width 0.4s' }} />
+                  </div>
+                </div>
+              )}
 
               {!packData ? (
                 <div style={{ background:'#f5f5f5', borderRadius:16, padding:16, marginBottom:10, textAlign:'center' }}>
@@ -159,6 +212,30 @@ export default function PlayerApp({ user, playerName }) {
               )}
 
               <button onClick={() => setPview('book')} style={{ width:'100%', padding:12, borderRadius:12, background:'#1D9E75', color:'#fff', border:'none', fontSize:14, fontWeight:600, cursor:'pointer', marginBottom:8 }}>Book a session</button>
+
+              {/* Leaderboard */}
+              <div style={{ marginBottom:14 }}>
+                <div style={{ fontSize:10, fontWeight:600, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.06em', margin:'14px 0 8px', display:'flex', justifyContent:'space-between' }}>
+                  <span>This month's leaderboard</span>
+                  <span style={{ color:'#1D9E75' }}>Top 10</span>
+                </div>
+                {leaderboard.length === 0 ? (
+                  <div style={{ fontSize:12, color:'#aaa', textAlign:'center', padding:'1rem 0' }}>No sessions yet this month</div>
+                ) : leaderboard.map((p, i) => {
+                  const nameParts = (p.full_name || 'Player').split(' ');
+                  const display = nameParts.length > 1 ? nameParts[0] + ' ' + nameParts[1][0] + '.' : nameParts[0];
+                  const isMe = p.full_name === playerName;
+                  return (
+                    <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:10, background: isMe ? '#E1F5EE' : i===0 ? '#FFFDE7' : 'transparent', marginBottom:4 }}>
+                      <div style={{ fontSize:13, fontWeight:700, color: i===0?'#F9A825':i===1?'#9E9E9E':i===2?'#8D6E63':'#aaa', minWidth:20, textAlign:'center' }}>
+                        {i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}
+                      </div>
+                      <div style={{ flex:1, fontSize:13, fontWeight: isMe?600:400, color: isMe?'#085041':'#0a0a0a' }}>{display}{isMe?' (you)':''}</div>
+                      <div style={{ fontSize:12, fontWeight:600, color: isMe?'#0F6E56':'#888' }}>{p.sessions_this_month || 0} sessions</div>
+                    </div>
+                  );
+                })}
+              </div>
 
               {bookings.filter(b=>b.status==='upcoming').length > 0 && (
                 <>

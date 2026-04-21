@@ -10,6 +10,7 @@ const supabase = createClient(
 export default function PlayerPage() {
   const [user, setUser] = useState(null);
   const [playerName, setPlayerName] = useState(null);
+  const [playerData, setPlayerData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,7 +19,7 @@ export default function PlayerPage() {
       setUser(session.user);
       const { data } = await supabase
         .from('players')
-        .select('full_name')
+        .select('full_name, play_frequency, skill_level, play_goal, streak_weeks, total_sessions, sessions_this_month')
         .eq('id', session.user.id)
         .single();
       if (!data || !data.full_name) {
@@ -26,6 +27,7 @@ export default function PlayerPage() {
         return;
       }
       setPlayerName(data.full_name);
+      setPlayerData(data);
       setLoading(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -41,5 +43,5 @@ export default function PlayerPage() {
   );
 
   const PlayerApp = require('../../components/PlayerApp').default;
-  return <PlayerApp user={user} playerName={playerName} />;
+  return <PlayerApp user={user} playerName={playerName} playerData={playerData} />;
 }
