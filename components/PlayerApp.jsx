@@ -35,7 +35,8 @@ function generateSessions() {
   for (let daysAhead = 0; daysAhead < 14; daysAhead++) {
     const d = new Date(today);
     d.setDate(today.getDate() + daysAhead);
-    const dayOfWeek = (d.getDay() + 6) % 7; // Convert Sun=0 to Mon=0
+    const jsDay = d.getDay(); // Sun=0, Mon=1...Sat=6
+    const dayOfWeek = jsDay === 0 ? 6 : jsDay - 1; // Convert to Mon=0...Sun=6
     const daySessions = WEEKLY_TEMPLATE.filter(t => t.day === dayOfWeek);
     if (!daySessions.length) continue;
     const dateStr = DAY_NAMES[dayOfWeek].slice(0,3) + " " + d.getDate() + " " + MONTHS[d.getMonth()];
