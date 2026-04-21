@@ -64,7 +64,8 @@ export default function PlayerApp({ user, playerName, playerData }) {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loadingBoard, setLoadingBoard] = useState(true);
 
-  const firstName = playerName || user?.email?.split('@')[0] || 'there';
+  const rawName = playerName || user?.email?.split('@')[0] || 'there';
+  const firstName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
 
   useEffect(() => {
     loadPackData();
@@ -159,7 +160,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                     <div style={{ fontSize:10, color:'#aaa', marginTop:1 }}>This month</div>
                   </div>
                   <div style={{ background:'#f5f5f5', borderRadius:10, padding:'8px', textAlign:'center' }}>
-                    <div style={{ fontSize:18, fontWeight:700, color:'#E65100' }}>{playerData.streak_weeks || 0}</div>
+                    <div style={{ fontSize:18, fontWeight:700, color: (playerData.streak_weeks||0) > 0 ? '#E65100' : '#0a0a0a' }}>{playerData.streak_weeks || 0}</div>
                     <div style={{ fontSize:10, color:'#aaa', marginTop:1 }}>Week streak</div>
                   </div>
                 </div>
@@ -223,12 +224,13 @@ export default function PlayerApp({ user, playerName, playerData }) {
                   <div style={{ fontSize:12, color:'#aaa', textAlign:'center', padding:'1rem 0' }}>No sessions yet this month</div>
                 ) : leaderboard.map((p, i) => {
                   const nameParts = (p.full_name || 'Player').split(' ');
-                  const display = nameParts.length > 1 ? nameParts[0] + ' ' + nameParts[1][0] + '.' : nameParts[0];
+                  const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+                  const display = nameParts.length > 1 ? cap(nameParts[0]) + ' ' + nameParts[1][0].toUpperCase() + '.' : cap(nameParts[0]);
                   const isMe = p.full_name === playerName;
                   return (
                     <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:10, background: isMe ? '#E1F5EE' : i===0 ? '#FFFDE7' : 'transparent', marginBottom:4 }}>
                       <div style={{ fontSize:13, fontWeight:700, color: i===0?'#F9A825':i===1?'#9E9E9E':i===2?'#8D6E63':'#aaa', minWidth:20, textAlign:'center' }}>
-                        {i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}
+                        {i===0&&(p.sessions_this_month||0)>0?'🥇':i===1&&(p.sessions_this_month||0)>0?'🥈':i===2&&(p.sessions_this_month||0)>0?'🥉':i+1}
                       </div>
                       <div style={{ flex:1, fontSize:13, fontWeight: isMe?600:400, color: isMe?'#085041':'#0a0a0a' }}>{display}{isMe?' (you)':''}</div>
                       <div style={{ fontSize:12, fontWeight:600, color: isMe?'#0F6E56':'#888' }}>{p.sessions_this_month || 0} sessions</div>
