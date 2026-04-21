@@ -1,25 +1,37 @@
 'use client';
-import { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { useState, useEffect } from 'react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [client, setClient] = useState(null);
+
+  useEffect(() => {
+    import('@supabase/supabase-js').then(({ createClient }) => {
+      const c = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      );
+      setClient(c);
+    });
+  }, []);
 
   async function handleLogin() {
-    if (!email) return;
+    if (!email || !client) return;
     setLoading(true);
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
-    const { error } = await supabase.auth.signInWithOtp({
+    setError('');
+    const { error } = await client.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: window.location.origin + '/player' },
     });
     setLoading(false);
-    if (!error) setSent(true);
+    if (error) {
+      setError(error.message);
+    } else {
+      setSent(true);
+    }
   }
 
   return (
@@ -31,7 +43,8 @@ export default function Login() {
           <>
             <p style={{fontSize:13,color:'#666',margin:'0 0 20px',lineHeight:1.6}}>Enter your email and we'll send you a login link.</p>
             <input type="email" placeholder="your@email.com" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleLogin()} style={{width:'100%',padding:'10px 12px',borderRadius:10,border:'0.5px solid #ddd',fontSize:14,marginBottom:12,fontFamily:'inherit'}}/>
-            <button onClick={handleLogin} disabled={loading} style={{width:'100%',padding:12,borderRadius:12,background:loading?'#9FE1CB':'#1D9E75',color:'#fff',border:'none',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{loading?'Sending...':'Send login link'}</button>
+            {error && <p style={{fontSize:12,color:'#E24B4A',margin:'0 0 8px'}}>{error}</p>}
+            <button onClick={handleLogin} disabled={loading||!client} style={{width:'100%',padding:12,borderRadius:12,background:loading?'#9FE1CB':'#1D9E75',color:'#fff',border:'none',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{loading?'Sending...':'Send login link'}</button>
           </>
         ) : (
           <div style={{textAlign:'center',padding:'1rem 0'}}>
