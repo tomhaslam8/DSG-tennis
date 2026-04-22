@@ -179,20 +179,8 @@ export default function PlayerApp({ user, playerName, playerData }) {
     const useSocialCredit = isSocial && packData.social_credits > 0;
     const newUsed = useSocialCredit ? packData.credits_used : packData.credits_used + selected.credits;
     const newSocial = useSocialCredit ? packData.social_credits - 1 : packData.social_credits;
-    await supabase.from('player_packs').update({ credits_used: newUsed, social_credits: newSocial }).eq('id', packData.id);
-    setPackData(p => ({ ...p, credits_used: newUsed, social_credits: newSocial }));
 
-    // Update player stats
-    const newTotal = (localStats?.total ?? playerData?.total_sessions ?? 0) + 1;
-    const newMonthly = (localStats?.monthly ?? playerData?.sessions_this_month ?? 0) + 1;
-    await supabase.from('players').update({
-      total_sessions: newTotal,
-      sessions_this_month: newMonthly,
-    }).eq('id', user.id);
-    // Reload everything from DB
-    loadLeaderboard();
-    if (typeof window !== 'undefined') window.location.reload();
-    // Calculate real session datetime
+    // Calculate real session datetime first
     const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
     let sessionDate = null;
     try {
@@ -207,12 +195,22 @@ export default function PlayerApp({ user, playerName, playerData }) {
         if (timeParts[3].toLowerCase() === 'pm' && hours !== 12) hours += 12;
         if (timeParts[3].toLowerCase() === 'am' && hours === 12) hours = 0;
         sessionDate.setHours(hours, mins, 0, 0);
-        // sessionDate is now in local time — toISOString() converts to UTC correctly
       }
     } catch(e) { sessionDate = null; }
 
+    // Update pack credits
+    await supabase.from('player_packs').update({ credits_used: newUsed, social_credits: newSocial }).eq('id', packData.id);
+
+    // Update player stats
+    const newTotal = (localStats?.total ?? playerData?.total_sessions ?? 0) + 1;
+    const newMonthly = (localStats?.monthly ?? playerData?.sessions_this_month ?? 0) + 1;
+    await supabase.from('players').update({
+      total_sessions: newTotal,
+      sessions_this_month: newMonthly,
+    }).eq('id', user.id);
+
     // Save booking to database
-    const { error: bookingError } = await supabase.from('bookings').insert({
+    await supabase.from('bookings').insert({
       player_id:        user.id,
       player_pack_id:   packData.id,
       credits_deducted: isSocial && packData.social_credits > 0 ? 0 : selected.credits,
@@ -224,8 +222,11 @@ export default function PlayerApp({ user, playerName, playerData }) {
       session_type:     selected.type,
     });
 
+    // Update all local state (no page reload needed)
+    setPackData(p => ({ ...p, credits_used: newUsed, social_credits: newSocial }));
+    setLocalStats({ total: newTotal, monthly: newMonthly });
     setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming', sessionDate: sessionDate ? sessionDate.toISOString() : null }, ...b]);
-    setPackData(p => ({ ...p, credits_used: newUsed }));
+    loadLeaderboard();
     setPview('success');
   }
 
@@ -299,10 +300,10 @@ export default function PlayerApp({ user, playerName, playerData }) {
                 <div style={{ background:'#E1F5EE', borderRadius:12, padding:'10px 14px', marginBottom:12 }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
                     <div style={{ fontSize:12, fontWeight:600, color:'#085041' }}>This week's goal</div>
-                    <div style={{ fontSize:11, color:'#0F6E56' }}>{playerData.sessions_this_month || 0}/{playerData.play_frequency}x</div>
+                    <div style={{ fontSize:11, color:'#0F6E56' }}>{localStats?.monthly ?? playerData.sessions_this_month ?? 0}/{playerData.play_frequency}x</div>
                   </div>
                   <div style={{ height:4, background:'#9FE1CB', borderRadius:2 }}>
-                    <div style={{ height:4, background:'#0F6E56', borderRadius:2, width:`${Math.min(((playerData.sessions_this_month||0)/parseInt(playerData.play_frequency))*100,100)}%`, transition:'width 0.4s' }} />
+                    <div style={{ height:4, background:'#0F6E56', borderRadius:2, width:`${Math.min(((localStats?.monthly ?? playerData.sessions_this_month ?? 0)/parseInt(playerData.play_frequency))*100,100)}%`, transition:'width 0.4s' }} />
                   </div>
                 </div>
               )}
