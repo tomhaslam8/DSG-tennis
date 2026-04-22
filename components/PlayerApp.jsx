@@ -120,7 +120,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
       .eq('status', 'active')
       .order('purchased_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
     setPackData(data);
     setLoading(false);
   }
@@ -139,8 +139,9 @@ export default function PlayerApp({ user, playerName, playerData }) {
       await supabase.from('player_packs').update({ social_credits: (packData.social_credits || 0) + 1 }).eq('id', packData.id);
       setPackData(p => ({ ...p, social_credits: (p.social_credits || 0) + 1 }));
     } else {
-      await supabase.from('player_packs').update({ credits_used: packData.credits_used - 1 }).eq('id', packData.id);
-      setPackData(p => ({ ...p, credits_used: p.credits_used - 1 }));
+      const newUsedAfterCancel = Math.max(0, packData.credits_used - 1);
+      await supabase.from('player_packs').update({ credits_used: newUsedAfterCancel }).eq('id', packData.id);
+      setPackData(p => ({ ...p, credits_used: newUsedAfterCancel }));
     }
     setBookings(bs => bs.filter(b => b.id !== booking.id));
   }
