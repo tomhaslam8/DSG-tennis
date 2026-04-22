@@ -181,13 +181,35 @@ export default function PlayerApp({ user, playerName, playerData }) {
     // Update local stats state
     setLocalStats({ total: newTotal, monthly: newMonthly });
     loadLeaderboard();
+    // Calculate real session datetime
+    const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    let sessionDate = null;
+    try {
+      const parts = selected.date.split(' ');
+      sessionDate = new Date();
+      sessionDate.setMonth(months[parts[2]]);
+      sessionDate.setDate(parseInt(parts[1]));
+      const timeParts = selected.time.match(/(\d+):(\d+)(am|pm)/i);
+      if (timeParts) {
+        let hours = parseInt(timeParts[1]);
+        const mins = parseInt(timeParts[2]);
+        if (timeParts[3].toLowerCase() === 'pm' && hours !== 12) hours += 12;
+        if (timeParts[3].toLowerCase() === 'am' && hours === 12) hours = 0;
+        sessionDate.setHours(hours, mins, 0, 0);
+      }
+    } catch(e) { sessionDate = null; }
+
     // Save booking to database
     const { error: bookingError } = await supabase.from('bookings').insert({
       player_id:        user.id,
       player_pack_id:   packData.id,
       credits_deducted: isSocial && packData.social_credits > 0 ? 0 : selected.credits,
       status:           'confirmed',
-      session_date:     new Date().toISOString().split('T')[0],
+      session_date:     sessionDate ? sessionDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      session_datetime: sessionDate ? sessionDate.toISOString() : null,
+      session_name:     selected.name,
+      session_time:     selected.time,
+      session_type:     selected.type,
     });
 
     setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming', sessionDate: sessionDate ? sessionDate.toISOString() : null }, ...b]);
