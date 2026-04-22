@@ -105,7 +105,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
         name: b.session_name || 'Session',
         date: new Date(b.session_date).toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' }),
         time: b.session_time || '',
-        status: new Date(b.session_date) >= new Date() ? 'upcoming' : 'attended',
+        status: b.status === 'confirmed' ? 'upcoming' : 'attended',
         type: b.session_type || 'lesson',
       })));
     }
