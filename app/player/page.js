@@ -19,7 +19,7 @@ export default function PlayerPage() {
       setUser(session.user);
       const { data } = await supabase
         .from('players')
-        .select('full_name, play_frequency, skill_level, play_goal, streak_weeks, total_sessions, sessions_this_month')
+        .select('full_name, play_frequency, skill_level, play_goal, streak_weeks, total_sessions, sessions_this_month, created_at')
         .eq('id', session.user.id)
         .single();
       if (!data || !data.full_name) {
