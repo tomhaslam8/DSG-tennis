@@ -189,9 +189,9 @@ export default function PlayerApp({ user, playerName, playerData }) {
       total_sessions: newTotal,
       sessions_this_month: newMonthly,
     }).eq('id', user.id);
-    // Update local stats state
-    setLocalStats({ total: newTotal, monthly: newMonthly });
+    // Reload everything from DB
     loadLeaderboard();
+    if (typeof window !== 'undefined') window.location.reload();
     // Calculate real session datetime
     const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
     let sessionDate = null;
