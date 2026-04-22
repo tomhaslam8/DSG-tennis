@@ -107,6 +107,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
         time: b.session_time || '',
         status: b.status === 'confirmed' ? 'upcoming' : 'attended',
         type: b.session_type || 'lesson',
+        sessionDate: b.session_datetime || null,
       })));
     }
   }
