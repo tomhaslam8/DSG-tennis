@@ -308,7 +308,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                         {i < used ? '✓' : i+1}
                       </div>
                     ))}
-                    {socialCredits > 0 && <div style={{ width:28, height:28, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, fontWeight:600, background:'#EEEDFE', color:'#3C3489', border:'1.5px solid #AFA9EC' }}>social</div>}
+                    {socialCredits > 0 && packName === 'Discover' && <div style={{ width:28, height:28, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, fontWeight:600, background:'#EEEDFE', color:'#3C3489', border:'1.5px solid #AFA9EC' }}>social</div>}
                   </div>
                   <div style={{ height:4, background:'#9FE1CB', borderRadius:2, marginBottom:4 }}>
                     <div style={{ height:4, background:'#0F6E56', borderRadius:2, width:`${Math.min((used/packTotal)*100,100)}%` }} />
@@ -365,7 +365,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                   <div style={{ fontSize:10, fontWeight:600, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.06em', margin:'14px 0 8px' }}>Coming up</div>
                   {bookings.filter(b=>b.status==='upcoming').slice(0,2).map(b => {
                     const sessionDateTime = b.sessionDate ? new Date(b.sessionDate) : null;
-                    const hoursUntil = sessionDateTime ? (sessionDateTime - new Date()) / 3600000 : 0;
+                    const hoursUntil = sessionDateTime ? (sessionDateTime - new Date()) / 3600000 : 999;
                     const canCancel = hoursUntil > 12;
                     return (
                       <div key={b.id} style={{ display:'flex', alignItems:'center', gap:10, background:'#f5f5f5', borderRadius:10, padding:'10px 12px', marginBottom:6 }}>
