@@ -153,7 +153,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
       status:           'confirmed',
       session_date:     new Date().toISOString().split('T')[0],
     });
-    console.log('Booking insert result:', bookingError ? 'ERROR: '+JSON.stringify(bookingError) : 'SUCCESS');
+
     setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming' }, ...b]);
     setPackData(p => ({ ...p, credits_used: newUsed }));
     setPview('success');
