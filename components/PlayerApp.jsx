@@ -146,14 +146,14 @@ export default function PlayerApp({ user, playerName, playerData }) {
     setLocalStats({ total: newTotal, monthly: newMonthly });
     loadLeaderboard();
     // Save booking to database
-    await supabase.from('bookings').insert({
-      player_id:       user.id,
-      session_id:      null,
-      player_pack_id:  packData.id,
-      credits_deducted: useSocialCredit ? 0 : selected.credits,
-      status:          'confirmed',
-      session_date:    new Date().toISOString().split('T')[0],
+    const { error: bookingError } = await supabase.from('bookings').insert({
+      player_id:        user.id,
+      player_pack_id:   packData.id,
+      credits_deducted: isSocial && packData.social_credits > 0 ? 0 : selected.credits,
+      status:           'confirmed',
+      session_date:     new Date().toISOString().split('T')[0],
     });
+    if (bookingError) console.error('Booking insert error:', bookingError);
     setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming' }, ...b]);
     setPackData(p => ({ ...p, credits_used: newUsed }));
     setPview('success');
