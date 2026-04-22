@@ -71,12 +71,32 @@ export default function PlayerApp({ user, playerName, playerData }) {
       .order('day_of_week')
       .order('start_time');
     if (!data || !data.length) return;
+
+    // Get real booking counts for each session for the next 14 days
     const today = new Date();
     today.setHours(0,0,0,0);
+    const in14 = new Date(today);
+    in14.setDate(today.getDate() + 14);
+
+    const { data: bookingCounts } = await supabase
+      .from('bookings')
+      .select('session_id, session_date')
+      .eq('status', 'confirmed')
+      .gte('session_date', today.toISOString().split('T')[0])
+      .lte('session_date', in14.toISOString().split('T')[0]);
+
+    // Count bookings per session_id per date
+    const countMap = {};
+    (bookingCounts || []).forEach(b => {
+      const key = `${b.session_id}|${b.session_date}`;
+      countMap[key] = (countMap[key] || 0) + 1;
+    });
+
     const DAY_NAMES = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
     const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     const built = [];
     const seenDays = new Set();
+
     for (let daysAhead = 0; daysAhead < 14; daysAhead++) {
       const d = new Date(today);
       d.setDate(today.getDate() + daysAhead);
@@ -87,8 +107,10 @@ export default function PlayerApp({ user, playerName, playerData }) {
       if (!daySessions.length) continue;
       seenDays.add(dayOfWeek);
       const dateStr = DAY_NAMES[dayOfWeek].slice(0,3) + " " + d.getDate() + " " + MONTHS[d.getMonth()];
+      const dateKey = d.toISOString().split('T')[0];
       daySessions.forEach(s => {
-        built.push({ id: s.id, name: s.name, level: s.level, date: dateStr, day: DAY_NAMES[dayOfWeek], time: s.start_time, end: s.end_time, type: s.session_type, credits: s.credits_cost, spots: s.capacity, cap: s.capacity });
+        const booked = countMap[`${s.id}|${dateKey}`] || 0;
+        built.push({ id: s.id, name: s.name, level: s.level, date: dateStr, day: DAY_NAMES[dayOfWeek], time: s.start_time, end: s.end_time, type: s.session_type, credits: s.credits_cost, spots: Math.max(0, s.capacity - booked), cap: s.capacity });
       });
     }
     setSessions(built);
@@ -210,6 +232,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
     await supabase.from('bookings').insert({
       player_id:        user.id,
       player_pack_id:   packData.id,
+      session_id:       selected.id,
       credits_deducted: useSocialCredit ? 0 : selected.credits,
       status:           'confirmed',
       session_date:     sessionDate ? sessionDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -224,6 +247,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
     setLocalStats({ total: newTotal, monthly: newMonthly });
     setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming', sessionDate: sessionDate ? sessionDate.toISOString() : null, type: selected.type, credits: useSocialCredit ? 0 : selected.credits }, ...b]);
     loadLeaderboard();
+    loadSessions();
     setConfirming(false);
     setPview('success');
   }
