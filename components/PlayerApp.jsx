@@ -103,7 +103,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
       setBookings(data.map(b => ({
         id: b.id,
         name: b.session_name || 'Session',
-        date: new Date(b.session_date).toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' }),
+        date: b.session_date ? new Date(b.session_date).toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' }) : (b.session_datetime ? new Date(b.session_datetime).toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' }) : 'Date TBC'),
         time: b.session_time || '',
         status: b.status === 'confirmed' ? 'upcoming' : 'attended',
         type: b.session_type || 'lesson',
