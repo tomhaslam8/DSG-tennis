@@ -95,7 +95,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
   async function loadBookings() {
     const { data } = await supabase
       .from('bookings')
-      .select('*')
+      .select('*, session_datetime')
       .eq('player_id', user.id)
       .order('created_at', { ascending: false })
       .limit(20);
