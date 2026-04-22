@@ -177,7 +177,8 @@ export default function PlayerApp({ user, playerName, playerData }) {
 
   async function doConfirm() {
     const isSocial = selected.type === 'social';
-    const useSocialCredit = isSocial && packData.social_credits > 0;
+    const isDiscover = packData?.packs?.name === 'Discover';
+    const useSocialCredit = isSocial && isDiscover && packData.social_credits > 0;
     const newUsed = useSocialCredit ? packData.credits_used : packData.credits_used + selected.credits;
     const newSocial = useSocialCredit ? packData.social_credits - 1 : packData.social_credits;
 
@@ -214,7 +215,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
     await supabase.from('bookings').insert({
       player_id:        user.id,
       player_pack_id:   packData.id,
-      credits_deducted: isSocial && packData.social_credits > 0 ? 0 : selected.credits,
+      credits_deducted: useSocialCredit ? 0 : selected.credits,
       status:           'confirmed',
       session_date:     sessionDate ? sessionDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       session_datetime: sessionDate ? sessionDate.toISOString() : null,
@@ -425,7 +426,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                       {SESSIONS.find(s=>s.day===day).date}
                     </div>
                     {SESSIONS.filter(s=>s.day===day).map(s => {
-                      const hasSocialCredit = socialCredits > 0;
+                      const hasSocialCredit = packName === 'Discover' && socialCredits > 0;
                       const canAfford = (s.type === 'social' && !hasSocialCredit) ? credits >= 1 : s.type === 'social' ? true : credits >= s.credits;
                       const available = s.spots > 0 && canAfford;
                       return (
