@@ -78,6 +78,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
   useEffect(() => {
     loadPackData();
     loadLeaderboard();
+    loadBookings();
     if (playerData) setLocalStats({ total: playerData.total_sessions||0, monthly: playerData.sessions_this_month||0 });
   }, [user]);
 
@@ -89,6 +90,25 @@ export default function PlayerApp({ user, playerName, playerData }) {
     if (monthly.data) setLeaderboard(monthly.data);
     if (allTime.data) setHallOfFame(allTime.data);
     setLoadingBoard(false);
+  }
+
+  async function loadBookings() {
+    const { data } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('player_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    if (data) {
+      setBookings(data.map(b => ({
+        id: b.id,
+        name: b.session_name || 'Session',
+        date: new Date(b.session_date).toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' }),
+        time: b.session_time || '',
+        status: new Date(b.session_date) >= new Date() ? 'upcoming' : 'attended',
+        type: b.session_type || 'lesson',
+      })));
+    }
   }
 
   async function loadPackData() {
