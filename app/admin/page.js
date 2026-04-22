@@ -50,6 +50,14 @@ export default function AdminDashboard() {
     setLoading(false);
   }
 
+  async function markAttended(playerId) {
+    await supabase.from('players').update({
+      total_sessions: supabase.raw('total_sessions + 1'),
+      sessions_this_month: supabase.raw('sessions_this_month + 1'),
+    }).eq('id', playerId);
+    loadData();
+  }
+
   function getActivePack(p) {
     return p.player_packs?.find(pp => pp.status === 'active');
   }
@@ -167,7 +175,7 @@ export default function AdminDashboard() {
               <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
                 <thead>
                   <tr>
-                    {['Player','Pack','Credits','Sessions','Streak','Auto-renew','Status'].map(h=>(
+                    {['Player','Pack','Credits','Sessions','Streak','Auto-renew','Status',''].map(h=>(
                       <th key={h} style={{ textAlign:'left', fontSize:11, fontWeight:500, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.04em', padding:'0 10px 10px', borderBottom:'0.5px solid #e8e8e8', whiteSpace:'nowrap' }}>{h}</th>
                     ))}
                   </tr>
@@ -205,6 +213,9 @@ export default function AdminDashboard() {
                         </td>
                         <td style={{ padding:'10px' }}>
                           <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20, fontWeight:500, background:sc.bg, color:sc.color }}>{sc.label}</span>
+                        </td>
+                        <td style={{ padding:'10px' }}>
+                          <button onClick={() => markAttended(p.id)} style={{ fontSize:11, padding:'4px 10px', borderRadius:6, border:'0.5px solid #1D9E75', color:'#1D9E75', background:'transparent', cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>+ Session</button>
                         </td>
                       </tr>
                     );
