@@ -23,7 +23,7 @@ const PACKS = [
     price: 400,
     credits: 12,
     description: '12 sessions, pay for 10. 2 free sessions included.',
-    expiry: '12 weeks · Auto-renews so you never stop playing',
+    expiry: '',
     highlight: true,
   },
 ];
