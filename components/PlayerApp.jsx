@@ -441,6 +441,65 @@ export default function PlayerApp({ user, playerName, playerData }) {
             </div>
           )}
 
+        {pview === 'account' && (
+            <div style={{ paddingBottom:16 }}>
+              <div style={{ paddingTop:14, paddingBottom:12 }}>
+                <div style={{ fontSize:16, fontWeight:600, color:'#0a0a0a' }}>Account</div>
+              </div>
+
+              <div style={{ background:'#f5f5f5', borderRadius:16, padding:16, marginBottom:12 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
+                  <div style={{ width:48, height:48, borderRadius:'50%', background:'#1D9E75', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:700, color:'#fff', flexShrink:0 }}>
+                    {firstName.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ fontSize:16, fontWeight:600, color:'#0a0a0a' }}>{firstName}</div>
+                    <div style={{ fontSize:12, color:'#aaa' }}>{user?.email}</div>
+                  </div>
+                </div>
+                {[
+                  { label:'Level', value: playerData?.skill_level ? playerData.skill_level.charAt(0).toUpperCase() + playerData.skill_level.slice(1) : '—' },
+                  { label:'Weekly goal', value: playerData?.play_frequency ? playerData.play_frequency + 'x per week' : '—' },
+                  { label:'Play goal', value: playerData?.play_goal ? playerData.play_goal.charAt(0).toUpperCase() + playerData.play_goal.slice(1) : '—' },
+                  { label:'Member since', value: playerData?.created_at ? new Date(playerData.created_at).toLocaleDateString('en-AU', { month:'long', year:'numeric' }) : '—' },
+                ].map(item => (
+                  <div key={item.label} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderBottom:'0.5px solid #ebebeb' }}>
+                    <span style={{ fontSize:13, color:'#888' }}>{item.label}</span>
+                    <span style={{ fontSize:13, fontWeight:500, color:'#0a0a0a' }}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ background:'#f5f5f5', borderRadius:16, padding:16, marginBottom:12 }}>
+                <div style={{ fontSize:12, fontWeight:600, color:'#0a0a0a', marginBottom:12 }}>Your stats</div>
+                {[
+                  { label:'Total sessions', value: playerData?.total_sessions || 0 },
+                  { label:'This month', value: playerData?.sessions_this_month || 0 },
+                  { label:'Week streak', value: (playerData?.streak_weeks || 0) + ' weeks' },
+                ].map(item => (
+                  <div key={item.label} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderBottom:'0.5px solid #ebebeb' }}>
+                    <span style={{ fontSize:13, color:'#888' }}>{item.label}</span>
+                    <span style={{ fontSize:13, fontWeight:500, color:'#0a0a0a' }}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => window.location.href='/onboard'}
+                style={{ width:'100%', padding:12, borderRadius:12, background:'transparent', border:'0.5px solid #e0e0e0', fontSize:13, color:'#0a0a0a', cursor:'pointer', fontFamily:'inherit', marginBottom:8 }}
+              >
+                Update my goals
+              </button>
+
+              <button
+                onClick={async () => { await supabase.auth.signOut(); window.location.href='/login'; }}
+                style={{ width:'100%', padding:12, borderRadius:12, background:'transparent', border:'0.5px solid #FCEBEB', fontSize:13, color:'#E24B4A', cursor:'pointer', fontFamily:'inherit' }}
+              >
+                Sign out
+              </button>
+            </div>
+          )}
+
         {pview === 'history' && (
             <div style={{ paddingBottom:16 }}>
               <div style={{ paddingTop:14, paddingBottom:12 }}>
