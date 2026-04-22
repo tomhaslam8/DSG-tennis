@@ -183,8 +183,8 @@ export default function PlayerApp({ user, playerName, playerData }) {
     setPackData(p => ({ ...p, credits_used: newUsed, social_credits: newSocial }));
 
     // Update player stats
-    const newTotal = (playerData?.total_sessions || 0) + 1;
-    const newMonthly = (playerData?.sessions_this_month || 0) + 1;
+    const newTotal = (localStats?.total ?? playerData?.total_sessions ?? 0) + 1;
+    const newMonthly = (localStats?.monthly ?? playerData?.sessions_this_month ?? 0) + 1;
     await supabase.from('players').update({
       total_sessions: newTotal,
       sessions_this_month: newMonthly,
