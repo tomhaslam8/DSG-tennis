@@ -11,6 +11,7 @@ const supabase = createClient(
 function WelcomeContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
+  const pack = searchParams.get('pack') || 'discover';
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
 
@@ -58,8 +59,8 @@ function WelcomeContent() {
         </div>
 
         <div style={{ background:'#E1F5EE', borderRadius:12, padding:'12px 14px', marginBottom:16 }}>
-          <div style={{ fontSize:12, fontWeight:600, color:'#085041', marginBottom:2 }}>Your Discover Pack</div>
-          <div style={{ fontSize:12, color:'#0F6E56' }}>3 lesson credits + 1 social ticket · 21 days to use</div>
+          <div style={{ fontSize:12, fontWeight:600, color:'#085041', marginBottom:2 }}>{pack === 'join10' ? 'Your Join 10 Pack' : 'Your Discover Pack'}</div>
+          <div style={{ fontSize:12, color:'#0F6E56' }}>{pack === 'join10' ? '12 credits · No expiry' : '3 lesson credits + 1 social ticket · 21 days to use'}</div>
         </div>
 
         {!sent && sending && (
