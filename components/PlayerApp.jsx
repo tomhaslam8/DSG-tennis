@@ -366,7 +366,10 @@ export default function PlayerApp({ user, playerName, playerData }) {
                         {canCancel ? (
                           <button onClick={() => cancelBooking(b)} style={{ fontSize:11, padding:'3px 8px', borderRadius:6, border:'0.5px solid #e0e0e0', background:'transparent', color:'#E24B4A', cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
                         ) : (
-                          <span style={{ fontSize:10, color:'#854F0B', fontWeight:500, background:'#FAEEDA', padding:'2px 7px', borderRadius:20 }}>Locked</span>
+                          <div style={{ textAlign:'right' }}>
+                          <span style={{ fontSize:10, color:'#854F0B', fontWeight:500, background:'#FAEEDA', padding:'2px 7px', borderRadius:20, display:'block' }}>Locked</span>
+                          <span style={{ fontSize:9, color:'#aaa', marginTop:2, display:'block' }}>Within 12hrs</span>
+                        </div>
                         )}
                       </div>
                     );
