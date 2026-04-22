@@ -78,12 +78,15 @@ export default function PlayerApp({ user, playerName, playerData }) {
     const in14 = new Date(today);
     in14.setDate(today.getDate() + 14);
 
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    const in14Key = `${in14.getFullYear()}-${String(in14.getMonth()+1).padStart(2,'0')}-${String(in14.getDate()).padStart(2,'0')}`;
+
     const { data: bookingCounts } = await supabase
       .from('bookings')
       .select('session_id, session_date')
       .eq('status', 'confirmed')
-      .gte('session_date', today.toISOString().split('T')[0])
-      .lte('session_date', in14.toISOString().split('T')[0]);
+      .gte('session_date', todayKey)
+      .lte('session_date', in14Key);
 
     // Count bookings per session_id per date
     const countMap = {};
@@ -107,7 +110,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
       if (!daySessions.length) continue;
       seenDays.add(dayOfWeek);
       const dateStr = DAY_NAMES[dayOfWeek].slice(0,3) + " " + d.getDate() + " " + MONTHS[d.getMonth()];
-      const dateKey = d.toISOString().split('T')[0];
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       daySessions.forEach(s => {
         const booked = countMap[`${s.id}|${dateKey}`] || 0;
         built.push({ id: s.id, name: s.name, level: s.level, date: dateStr, day: DAY_NAMES[dayOfWeek], time: s.start_time, end: s.end_time, type: s.session_type, credits: s.credits_cost, spots: Math.max(0, s.capacity - booked), cap: s.capacity });
@@ -235,7 +238,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
       session_id:       selected.id,
       credits_deducted: useSocialCredit ? 0 : selected.credits,
       status:           'confirmed',
-      session_date:     sessionDate ? sessionDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      session_date:     sessionDate ? `${sessionDate.getFullYear()}-${String(sessionDate.getMonth()+1).padStart(2,'0')}-${String(sessionDate.getDate()).padStart(2,'0')}` : `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`,
       session_datetime: sessionDate ? sessionDate.toISOString() : null,
       session_name:     selected.name,
       session_time:     selected.time,
