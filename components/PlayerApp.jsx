@@ -333,7 +333,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                   {bookings.filter(b=>b.status==='upcoming').slice(0,2).map(b => {
                     const sessionDateTime = b.sessionDate ? new Date(b.sessionDate) : null;
                     const hoursUntil = sessionDateTime ? (sessionDateTime - new Date()) / 3600000 : 24;
-                    const canCancel = hoursUntil > 6;
+                    const canCancel = hoursUntil > 12;
                     return (
                       <div key={b.id} style={{ display:'flex', alignItems:'center', gap:10, background:'#f5f5f5', borderRadius:10, padding:'10px 12px', marginBottom:6 }}>
                         <div style={{ width:7, height:7, borderRadius:'50%', background:'#1D9E75', flexShrink:0 }} />
