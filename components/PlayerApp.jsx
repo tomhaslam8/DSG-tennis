@@ -31,14 +31,17 @@ function generateSessions() {
   today.setHours(0,0,0,0);
   const sessions = [];
   let uid = 1;
-  // Show next 7 days of sessions only
+  const seenDays = new Set();
+  // Show next 14 days but only first occurrence of each day
   for (let daysAhead = 0; daysAhead < 14; daysAhead++) {
     const d = new Date(today);
     d.setDate(today.getDate() + daysAhead);
-    const jsDay = d.getDay(); // Sun=0, Mon=1...Sat=6
-    const dayOfWeek = jsDay === 0 ? 6 : jsDay - 1; // Convert to Mon=0...Sun=6
+    const jsDay = d.getDay();
+    const dayOfWeek = jsDay === 0 ? 6 : jsDay - 1;
+    if (seenDays.has(dayOfWeek)) continue;
     const daySessions = WEEKLY_TEMPLATE.filter(t => t.day === dayOfWeek);
     if (!daySessions.length) continue;
+    seenDays.add(dayOfWeek);
     const dateStr = DAY_NAMES[dayOfWeek].slice(0,3) + " " + d.getDate() + " " + MONTHS[d.getMonth()];
     daySessions.forEach(t => {
       const seed = t.id * 7 + daysAhead * 13;
