@@ -39,6 +39,47 @@ export default function SessionManager({ supabase }) {
     load();
   }
 
+  async function rainCancel(session) {
+    if (!window.confirm('Cancel this session due to rain? All players will be refunded their credits.')) return;
+    
+    // Get all confirmed bookings for this session
+    const { data: bookings } = await supabase
+      .from('bookings')
+      .select('id, player_pack_id, credits_deducted')
+      .eq('session_id', session.id)
+      .eq('status', 'confirmed');
+
+    if (bookings && bookings.length > 0) {
+      for (const booking of bookings) {
+        // Refund credit to player pack
+        const { data: pack } = await supabase
+          .from('player_packs')
+          .select('credits_used')
+          .eq('id', booking.player_pack_id)
+          .single();
+        
+        if (pack) {
+          await supabase.from('player_packs')
+            .update({ credits_used: Math.max(0, pack.credits_used - booking.credits_deducted) })
+            .eq('id', booking.player_pack_id);
+        }
+
+        // Cancel the booking
+        await supabase.from('bookings')
+          .update({ status: 'cancelled', cancelled_reason: 'rain' })
+          .eq('id', booking.id);
+      }
+    }
+
+    // Mark session as cancelled today
+    await supabase.from('sessions')
+      .update({ cancelled_date: new Date().toISOString().split('T')[0] })
+      .eq('id', session.id);
+
+    alert(`Session cancelled. ${bookings?.length || 0} players refunded.`);
+    load();
+  }
+
   function startEdit(s) {
     setForm({ name: s.name, level: s.level, session_type: s.session_type, credits_cost: s.credits_cost, day_of_week: s.day_of_week, start_time: s.start_time, end_time: s.end_time, capacity: s.capacity });
     setEditId(s.id);
@@ -129,6 +170,7 @@ export default function SessionManager({ supabase }) {
                   </div>
                   <div style={{ display:'flex', gap:6, flexShrink:0 }}>
                     <button onClick={() => startEdit(s)} style={{ fontSize:11, padding:'4px 10px', borderRadius:6, border:'0.5px solid #e0e0e0', background:'transparent', cursor:'pointer', fontFamily:'inherit' }}>Edit</button>
+                    <button onClick={() => rainCancel(s)} style={{ fontSize:11, padding:'4px 10px', borderRadius:6, border:'0.5px solid #4A90D9', color:'#4A90D9', background:'transparent', cursor:'pointer', fontFamily:'inherit' }}>🌧 Rain</button>
                     <button onClick={() => toggleActive(s)} style={{ fontSize:11, padding:'4px 10px', borderRadius:6, border:'0.5px solid #e0e0e0', background: s.active===false?'#FAEEDA':'transparent', color: s.active===false?'#633806':'#888', cursor:'pointer', fontFamily:'inherit' }}>
                       {s.active === false ? 'Inactive' : 'Active'}
                     </button>
