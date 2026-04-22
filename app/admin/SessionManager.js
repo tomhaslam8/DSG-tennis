@@ -8,7 +8,9 @@ export default function SessionManager({ supabase }) {
   const [loading, setLoading]     = useState(true);
   const [adding, setAdding]       = useState(false);
   const [editId, setEditId]       = useState(null);
-  const [form, setForm]           = useState({ name:'', level:'All levels', session_type:'lesson', credits_cost:1, day_of_week:0, start_time:'', end_time:'', capacity:8 });
+  const [expandedId, setExpandedId] = useState(null);
+  const [bookingsBySession, setBookingsBySession] = useState({});
+  const [form, setForm] = useState({ name:'', level:'All levels', session_type:'lesson', credits_cost:1, day_of_week:0, start_time:'', end_time:'', capacity:8 });
 
   useEffect(() => { load(); }, []);
 
@@ -20,6 +22,48 @@ export default function SessionManager({ supabase }) {
       .order('start_time');
     setSessions(data || []);
     setLoading(false);
+  }
+
+  async function loadBookingsForSession(sessionId) {
+    // Get next occurrence date for this session
+    const session = sessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    // Find next date for this day_of_week
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    let daysAhead = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const jsDay = d.getDay();
+      const dayOfWeek = jsDay === 0 ? 6 : jsDay - 1;
+      if (dayOfWeek === session.day_of_week) { daysAhead = i; break; }
+    }
+    const nextDate = new Date(today);
+    nextDate.setDate(today.getDate() + daysAhead);
+    const dateKey = `${nextDate.getFullYear()}-${String(nextDate.getMonth()+1).padStart(2,'0')}-${String(nextDate.getDate()).padStart(2,'0')}`;
+
+    const { data } = await supabase
+      .from('bookings')
+      .select('id, player_id, session_date, players(full_name, email, phone)')
+      .eq('session_id', sessionId)
+      .eq('session_date', dateKey)
+      .eq('status', 'confirmed')
+      .order('created_at');
+
+    setBookingsBySession(prev => ({ ...prev, [sessionId]: { players: data || [], date: dateKey } }));
+  }
+
+  async function toggleExpand(sessionId) {
+    if (expandedId === sessionId) {
+      setExpandedId(null);
+    } else {
+      setExpandedId(sessionId);
+      if (!bookingsBySession[sessionId]) {
+        await loadBookingsForSession(sessionId);
+      }
+    }
   }
 
   async function saveSession() {
@@ -42,7 +86,6 @@ export default function SessionManager({ supabase }) {
   async function rainCancel(session) {
     if (!window.confirm('Cancel this session due to rain? All players will be refunded their credits.')) return;
     
-    // Get all confirmed bookings for this session
     const { data: bookings } = await supabase
       .from('bookings')
       .select('id, player_pack_id, credits_deducted')
@@ -51,7 +94,6 @@ export default function SessionManager({ supabase }) {
 
     if (bookings && bookings.length > 0) {
       for (const booking of bookings) {
-        // Refund credit to player pack
         const { data: pack } = await supabase
           .from('player_packs')
           .select('credits_used')
@@ -64,19 +106,18 @@ export default function SessionManager({ supabase }) {
             .eq('id', booking.player_pack_id);
         }
 
-        // Cancel the booking
         await supabase.from('bookings')
           .update({ status: 'cancelled', cancelled_reason: 'rain' })
           .eq('id', booking.id);
       }
     }
 
-    // Mark session as cancelled today
     await supabase.from('sessions')
       .update({ cancelled_date: new Date().toISOString().split('T')[0] })
       .eq('id', session.id);
 
     alert(`Session cancelled. ${bookings?.length || 0} players refunded.`);
+    setBookingsBySession(prev => ({ ...prev, [session.id]: null }));
     load();
   }
 
@@ -95,7 +136,6 @@ export default function SessionManager({ supabase }) {
         <button onClick={() => { setAdding(true); setEditId(null); }} style={{ fontSize:13, padding:'7px 16px', borderRadius:8, background:'#1D9E75', color:'#fff', border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:500 }}>+ Add session</button>
       </div>
 
-      {/* Add / Edit form */}
       {adding && (
         <div style={{ background:'#f9f9f9', borderRadius:12, padding:16, marginBottom:20, border:'0.5px solid #e0e0e0' }}>
           <div style={{ fontSize:13, fontWeight:600, marginBottom:12 }}>{editId ? 'Edit session' : 'New session'}</div>
@@ -146,7 +186,6 @@ export default function SessionManager({ supabase }) {
         </div>
       )}
 
-      {/* Session list grouped by day */}
       {DAYS.map((day, di) => {
         const daySessions = sessions.filter(s => s.day_of_week === di);
         if (!daySessions.length) return null;
@@ -156,25 +195,59 @@ export default function SessionManager({ supabase }) {
             {daySessions.map(s => {
               const pct = s.capacity > 0 ? Math.round((s.booked / s.capacity) * 100) : 0;
               const barCol = pct >= 100 ? '#E24B4A' : pct >= 75 ? '#BA7517' : '#1D9E75';
+              const isExpanded = expandedId === s.id;
+              const sessionBookings = bookingsBySession[s.id];
               return (
-                <div key={s.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 12px', background:'#fff', border:'0.5px solid #e8e8e8', borderRadius:10, marginBottom:6 }}>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:13, fontWeight:500 }}>{s.name} <span style={{ fontSize:11, color:'#aaa', fontWeight:400 }}>· {s.level}</span></div>
-                    <div style={{ fontSize:11, color:'#888', marginTop:2 }}>{s.start_time}–{s.end_time} · {s.credits_cost} credit{s.credits_cost!==1?'s':''}</div>
-                    <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:6 }}>
-                      <div style={{ flex:1, height:4, background:'#f0f0f0', borderRadius:2 }}>
-                        <div style={{ height:4, borderRadius:2, background:barCol, width:`${Math.min(pct,100)}%` }} />
+                <div key={s.id} style={{ background:'#fff', border:'0.5px solid #e8e8e8', borderRadius:10, marginBottom:6, overflow:'hidden' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 12px' }}>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:13, fontWeight:500 }}>{s.name} <span style={{ fontSize:11, color:'#aaa', fontWeight:400 }}>· {s.level}</span></div>
+                      <div style={{ fontSize:11, color:'#888', marginTop:2 }}>{s.start_time}–{s.end_time} · {s.credits_cost} credit{s.credits_cost!==1?'s':''}</div>
+                      <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:6 }}>
+                        <div style={{ flex:1, height:4, background:'#f0f0f0', borderRadius:2 }}>
+                          <div style={{ height:4, borderRadius:2, background:barCol, width:`${Math.min(pct,100)}%` }} />
+                        </div>
+                        <div style={{ fontSize:11, color:'#888', whiteSpace:'nowrap' }}>{s.booked}/{s.capacity}</div>
                       </div>
-                      <div style={{ fontSize:11, color:'#888', whiteSpace:'nowrap' }}>{s.booked}/{s.capacity}</div>
+                    </div>
+                    <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+                      <button onClick={() => toggleExpand(s.id)} style={{ fontSize:11, padding:'4px 10px', borderRadius:6, border:'0.5px solid #e0e0e0', background: isExpanded?'#f5f5f5':'transparent', cursor:'pointer', fontFamily:'inherit', color:'#0a0a0a' }}>
+                        {isExpanded ? 'Hide' : 'Who\'s in'}
+                      </button>
+                      <button onClick={() => startEdit(s)} style={{ fontSize:11, padding:'4px 10px', borderRadius:6, border:'0.5px solid #e0e0e0', background:'transparent', cursor:'pointer', fontFamily:'inherit' }}>Edit</button>
+                      <button onClick={() => rainCancel(s)} style={{ fontSize:11, padding:'4px 10px', borderRadius:6, border:'0.5px solid #4A90D9', color:'#4A90D9', background:'transparent', cursor:'pointer', fontFamily:'inherit' }}>🌧 Rain</button>
+                      <button onClick={() => toggleActive(s)} style={{ fontSize:11, padding:'4px 10px', borderRadius:6, border:'0.5px solid #e0e0e0', background: s.active===false?'#FAEEDA':'transparent', color: s.active===false?'#633806':'#888', cursor:'pointer', fontFamily:'inherit' }}>
+                        {s.active === false ? 'Inactive' : 'Active'}
+                      </button>
                     </div>
                   </div>
-                  <div style={{ display:'flex', gap:6, flexShrink:0 }}>
-                    <button onClick={() => startEdit(s)} style={{ fontSize:11, padding:'4px 10px', borderRadius:6, border:'0.5px solid #e0e0e0', background:'transparent', cursor:'pointer', fontFamily:'inherit' }}>Edit</button>
-                    <button onClick={() => rainCancel(s)} style={{ fontSize:11, padding:'4px 10px', borderRadius:6, border:'0.5px solid #4A90D9', color:'#4A90D9', background:'transparent', cursor:'pointer', fontFamily:'inherit' }}>🌧 Rain</button>
-                    <button onClick={() => toggleActive(s)} style={{ fontSize:11, padding:'4px 10px', borderRadius:6, border:'0.5px solid #e0e0e0', background: s.active===false?'#FAEEDA':'transparent', color: s.active===false?'#633806':'#888', cursor:'pointer', fontFamily:'inherit' }}>
-                      {s.active === false ? 'Inactive' : 'Active'}
-                    </button>
-                  </div>
+
+                  {isExpanded && (
+                    <div style={{ borderTop:'0.5px solid #f0f0f0', padding:'10px 12px', background:'#fafafa' }}>
+                      {!sessionBookings ? (
+                        <div style={{ fontSize:12, color:'#aaa' }}>Loading...</div>
+                      ) : sessionBookings.players.length === 0 ? (
+                        <div style={{ fontSize:12, color:'#aaa' }}>No bookings yet for {sessionBookings.date}</div>
+                      ) : (
+                        <>
+                          <div style={{ fontSize:11, fontWeight:600, color:'#aaa', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.04em' }}>
+                            Booked for {sessionBookings.date} · {sessionBookings.players.length} player{sessionBookings.players.length!==1?'s':''}
+                          </div>
+                          {sessionBookings.players.map((b, i) => (
+                            <div key={b.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 0', borderBottom: i < sessionBookings.players.length-1 ? '0.5px solid #f0f0f0' : 'none' }}>
+                              <div>
+                                <div style={{ fontSize:13, fontWeight:500 }}>{b.players?.full_name || 'Unknown'}</div>
+                                <div style={{ fontSize:11, color:'#aaa' }}>{b.players?.email}</div>
+                              </div>
+                              {b.players?.phone && (
+                                <a href={`tel:${b.players.phone}`} style={{ fontSize:12, color:'#1D9E75', textDecoration:'none', fontWeight:500 }}>{b.players.phone}</a>
+                              )}
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -20,6 +20,8 @@ export default function PlayerApp({ user, playerName, playerData }) {
   const [loadingBoard, setLoadingBoard] = useState(true);
   const [confirming, setConfirming] = useState(false);
   const [sessions, setSessions] = useState([]);
+  const [editingPhone, setEditingPhone] = useState(false);
+  const [phoneInput, setPhoneInput] = useState('');
 
   const rawName = playerName || user?.email?.split('@')[0] || 'there';
   const firstName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
@@ -189,6 +191,13 @@ export default function PlayerApp({ user, playerName, playerData }) {
     }).eq('id', user.id);
     setLocalStats({ total: newTotal, monthly: newMonthly });
     loadLeaderboard();
+  }
+
+  async function savePhone() {
+    const phone = phoneInput.trim() || null;
+    await supabase.from('players').update({ phone }).eq('id', user.id);
+    playerData.phone = phone;
+    setEditingPhone(false);
   }
 
   function doBook(s) { setSelected(s); setPview('confirm'); }
@@ -548,6 +557,28 @@ export default function PlayerApp({ user, playerName, playerData }) {
                     <span style={{ fontSize:13, fontWeight:500, color:'#0a0a0a' }}>{item.value}</span>
                   </div>
                 ))}
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0' }}>
+                  <span style={{ fontSize:13, color:'#888' }}>Mobile</span>
+                  {editingPhone ? (
+                    <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                      <input
+                        type="tel"
+                        value={phoneInput}
+                        onChange={e => setPhoneInput(e.target.value)}
+                        placeholder="04xx xxx xxx"
+                        autoFocus
+                        style={{ fontSize:13, padding:'4px 8px', borderRadius:8, border:'0.5px solid #1D9E75', fontFamily:'inherit', width:130, outline:'none' }}
+                      />
+                      <button onClick={savePhone} style={{ fontSize:11, padding:'4px 10px', borderRadius:6, background:'#1D9E75', color:'#fff', border:'none', cursor:'pointer', fontFamily:'inherit' }}>Save</button>
+                      <button onClick={() => setEditingPhone(false)} style={{ fontSize:11, padding:'4px 8px', borderRadius:6, background:'transparent', border:'0.5px solid #e0e0e0', cursor:'pointer', fontFamily:'inherit' }}>✕</button>
+                    </div>
+                  ) : (
+                    <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                      <span style={{ fontSize:13, fontWeight:500, color: playerData?.phone ? '#0a0a0a' : '#aaa' }}>{playerData?.phone || 'Add mobile'}</span>
+                      <button onClick={() => { setPhoneInput(playerData?.phone || ''); setEditingPhone(true); }} style={{ fontSize:11, padding:'2px 8px', borderRadius:6, border:'0.5px solid #e0e0e0', background:'transparent', cursor:'pointer', fontFamily:'inherit', color:'#888' }}>Edit</button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div style={{ background:'#f5f5f5', borderRadius:16, padding:16, marginBottom:12 }}>
@@ -587,20 +618,24 @@ export default function PlayerApp({ user, playerName, playerData }) {
               </div>
               {bookings.length === 0 ? (
                 <div style={{ textAlign:'center', padding:'2rem 0', color:'#aaa', fontSize:13 }}>No sessions booked yet</div>
-              ) : [...bookings].reverse().map(b => (
-                <div key={b.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 0', borderBottom:'0.5px solid #f0f0f0' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                    <div style={{ width:7, height:7, borderRadius:'50%', background: b.status==='upcoming'?'#1D9E75':'#9FE1CB', flexShrink:0 }} />
-                    <div>
-                      <div style={{ fontSize:13, fontWeight:500 }}>{b.name}</div>
-                      <div style={{ fontSize:11, color:'#888', marginTop:1 }}>{b.date} · {b.time}</div>
+              ) : [...bookings].reverse().map(b => {
+                const isPast = b.sessionDate ? new Date(b.sessionDate) < new Date() : false;
+                const displayStatus = isPast ? 'attended' : 'upcoming';
+                return (
+                  <div key={b.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 0', borderBottom:'0.5px solid #f0f0f0' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                      <div style={{ width:7, height:7, borderRadius:'50%', background: displayStatus==='upcoming'?'#1D9E75':'#9FE1CB', flexShrink:0 }} />
+                      <div>
+                        <div style={{ fontSize:13, fontWeight:500 }}>{b.name}</div>
+                        <div style={{ fontSize:11, color:'#888', marginTop:1 }}>{b.date} · {b.time}</div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize:11, padding:'2px 8px', borderRadius:20, fontWeight:500, background: displayStatus==='upcoming'?'#E6F1FB':'#E1F5EE', color: displayStatus==='upcoming'?'#0C447C':'#0F6E56' }}>
+                      {displayStatus==='upcoming'?'Upcoming':'Attended'}
                     </div>
                   </div>
-                  <div style={{ fontSize:11, padding:'2px 8px', borderRadius:20, fontWeight:500, background: b.status==='upcoming'?'#E6F1FB':'#E1F5EE', color: b.status==='upcoming'?'#0C447C':'#0F6E56' }}>
-                    {b.status==='upcoming'?'Upcoming':'Attended'}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
