@@ -418,12 +418,17 @@ export default function PlayerApp({ user, playerName, playerData }) {
                     const sessionDateTime = b.sessionDate ? new Date(b.sessionDate) : null;
                     const hoursUntil = sessionDateTime ? (new Date(sessionDateTime) - new Date()) / 3600000 : 999;
                     const canCancel = hoursUntil > 12;
+                    const startingSoon = hoursUntil > 0 && hoursUntil <= 2;
+                    const hoursLabel = hoursUntil < 1 ? 'Under 1hr away' : `${Math.floor(hoursUntil)}hr${Math.floor(hoursUntil)!==1?'s':''} away`;
                     return (
-                      <div key={b.id} style={{ display:'flex', alignItems:'center', gap:10, background:'#f5f5f5', borderRadius:10, padding:'10px 12px', marginBottom:6 }}>
+                      <div key={b.id} style={{ display:'flex', alignItems:'center', gap:10, background: startingSoon ? '#E1F5EE' : '#f5f5f5', borderRadius:10, padding:'10px 12px', marginBottom:6, border: startingSoon ? '1.5px solid #1D9E75' : '1.5px solid transparent' }}>
                         <div style={{ width:7, height:7, borderRadius:'50%', background:'#1D9E75', flexShrink:0 }} />
                         <div style={{ flex:1 }}>
-                          <div style={{ fontSize:12, fontWeight:500 }}>{b.name}</div>
-                          <div style={{ fontSize:11, color:'#888', marginTop:1 }}>{b.date} · {b.time}</div>
+                          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                            <div style={{ fontSize:12, fontWeight:500 }}>{b.name}</div>
+                            {startingSoon && <span style={{ fontSize:10, fontWeight:600, color:'#0F6E56', background:'#fff', padding:'1px 7px', borderRadius:20 }}>Starting soon · {hoursLabel}</span>}
+                          </div>
+                          <div style={{ fontSize:11, color: startingSoon ? '#0F6E56' : '#888', marginTop:1 }}>{b.date} · {b.time}</div>
                         </div>
                         {canCancel ? (
                           <button onClick={() => cancelBooking(b)} style={{ fontSize:11, padding:'3px 8px', borderRadius:6, border:'0.5px solid #e0e0e0', background:'transparent', color:'#E24B4A', cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
