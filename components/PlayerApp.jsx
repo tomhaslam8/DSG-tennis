@@ -71,7 +71,6 @@ export default function PlayerApp({ user, playerName, playerData }) {
   const [hallOfFame, setHallOfFame] = useState([]);
   const [boardTab, setBoardTab] = useState('monthly');
   const [loadingBoard, setLoadingBoard] = useState(true);
-  const [cancelTarget, setCancelTarget] = useState(null);
   const [confirming, setConfirming] = useState(false);
 
   const rawName = playerName || user?.email?.split('@')[0] || 'there';
@@ -149,13 +148,8 @@ export default function PlayerApp({ user, playerName, playerData }) {
   const packName = packData?.packs?.name || 'No active pack';
   const used = packTotal - credits;
 
-  function cancelBooking(booking) {
-    setCancelTarget(booking);
-    setPview('cancel-confirm');
-  }
-
-  async function doCancel() {
-    const booking = cancelTarget;
+  async function cancelBooking(booking) {
+    if (!window.confirm('Cancel this booking? Your credit will be refunded.')) return;
     const isSocial = booking.type === 'social';
     const isDiscover = packData?.packs?.name === 'Discover';
     if (isSocial && isDiscover) {
@@ -166,7 +160,6 @@ export default function PlayerApp({ user, playerName, playerData }) {
       await supabase.from('player_packs').update({ credits_used: newUsedAfterCancel }).eq('id', packData.id);
       setPackData(p => ({ ...p, credits_used: newUsedAfterCancel }));
     }
-    // Update booking status to cancelled in DB
     await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', booking.id);
     setBookings(bs => bs.filter(b => b.id !== booking.id));
     const currentTotal = localStats?.total ?? playerData?.total_sessions ?? 0;
@@ -179,7 +172,6 @@ export default function PlayerApp({ user, playerName, playerData }) {
     }).eq('id', user.id);
     setLocalStats({ total: newTotal, monthly: newMonthly });
     loadLeaderboard();
-    setPview('cancelled');
   }
 
   function doBook(s) { setSelected(s); setPview('confirm'); }
@@ -591,38 +583,6 @@ export default function PlayerApp({ user, playerName, playerData }) {
             </div>
           )}
 
-
-          {pview === 'cancel-confirm' && cancelTarget && (
-            <div style={{ paddingBottom:16, paddingTop:'1.5rem' }}>
-              <div style={{ width:56, height:56, borderRadius:'50%', background:'#FEF2F2', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }}>
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#E24B4A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </div>
-              <div style={{ fontSize:18, fontWeight:600, marginBottom:6, color:'#0a0a0a', textAlign:'center' }}>Cancel this session?</div>
-              <div style={{ fontSize:12, color:'#888', marginBottom:20, textAlign:'center' }}>{cancelTarget.name} · {cancelTarget.date} · {cancelTarget.time}</div>
-              <div style={{ background:'#f5f5f5', borderRadius:12, padding:14, marginBottom:20, textAlign:'center' }}>
-                <div style={{ fontSize:12, color:'#888', marginBottom:4 }}>Your credit will be refunded</div>
-                <div style={{ fontSize:13, fontWeight:600, color:'#0F6E56' }}>1 credit back to your pack</div>
-              </div>
-              <button onClick={doCancel} style={{ width:'100%', padding:12, borderRadius:12, background:'#E24B4A', color:'#fff', border:'none', fontSize:14, fontWeight:600, cursor:'pointer', marginBottom:8 }}>Yes, cancel booking</button>
-              <button onClick={() => setPview('home')} style={{ width:'100%', padding:12, borderRadius:12, background:'transparent', border:'0.5px solid #e0e0e0', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>Keep my booking</button>
-            </div>
-          )}
-
-          {pview === 'cancelled' && (
-            <div style={{ paddingBottom:16, textAlign:'center', paddingTop:'1.5rem' }}>
-              <div style={{ width:56, height:56, borderRadius:'50%', background:'#E1F5EE', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }}>
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <div style={{ fontSize:18, fontWeight:600, marginBottom:6, color:'#0a0a0a' }}>Booking cancelled</div>
-              <div style={{ fontSize:12, color:'#888', marginBottom:20 }}>Your credit has been refunded</div>
-              <div style={{ background:'#E1F5EE', borderRadius:12, padding:14, marginBottom:20 }}>
-                <div style={{ fontSize:12, color:'#085041', fontWeight:500, marginBottom:2 }}>Credit back in your pack</div>
-                <div style={{ fontSize:11, color:'#0F6E56' }}>{credits} credit{credits !== 1 ? 's' : ''} available now</div>
-              </div>
-              <button onClick={() => setPview('book')} style={{ width:'100%', padding:12, borderRadius:12, background:'#1D9E75', color:'#fff', border:'none', fontSize:14, fontWeight:600, cursor:'pointer', marginBottom:8 }}>Book another session</button>
-              <button onClick={() => setPview('home')} style={{ width:'100%', padding:12, borderRadius:12, background:'transparent', border:'0.5px solid #e0e0e0', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>Back to home</button>
-            </div>
-          )}
 
         </div>
 
