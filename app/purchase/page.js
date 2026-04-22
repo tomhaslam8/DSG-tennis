@@ -67,7 +67,7 @@ export default function Purchase() {
         <h1 style={{ fontSize:24, fontWeight:600, margin:'0 0 6px' }}>{expired ? 'Top up to keep playing' : 'Get started'}</h1>
         <p style={{ fontSize:13, color:'#666', margin:'0 0 24px' }}>{expired ? 'Your credits have run out. Choose a pack below.' : 'Choose a pack to begin playing.'}</p>
 
-        {PACKS.map(pack => (
+        {PACKS.filter(pack => !expired || pack.id === 'join10').map(pack => (
           <div key={pack.id} style={{ background:'#fff', borderRadius:16, padding:'1.25rem', marginBottom:12, border: pack.highlight ? '2px solid #1D9E75' : '0.5px solid #e0e0e0' }}>
             {pack.highlight && <div style={{ fontSize:10, fontWeight:600, color:'#0F6E56', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:8 }}>Most popular</div>}
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
