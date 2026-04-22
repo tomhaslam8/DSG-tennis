@@ -50,7 +50,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
       .order('created_at', { ascending: false })
       .limit(20);
     if (data) {
-      setBookings(data.map(b => ({
+      setBookings(data.filter(b => b.status !== 'cancelled').map(b => ({
         id: b.id,
         name: b.session_name || 'Session',
         date: b.session_date ? new Date(b.session_date).toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' }) : (b.session_datetime ? new Date(b.session_datetime).toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' }) : 'Date TBC'),
@@ -514,8 +514,8 @@ export default function PlayerApp({ user, playerName, playerData }) {
               <div style={{ background:'#f5f5f5', borderRadius:16, padding:16, marginBottom:12 }}>
                 <div style={{ fontSize:12, fontWeight:600, color:'#0a0a0a', marginBottom:12 }}>Your stats</div>
                 {[
-                  { label:'Total sessions', value: playerData?.total_sessions || 0 },
-                  { label:'This month', value: playerData?.sessions_this_month || 0 },
+                  { label:'Total sessions', value: localStats?.total ?? playerData?.total_sessions ?? 0 },
+                  { label:'This month', value: localStats?.monthly ?? playerData?.sessions_this_month ?? 0 },
                   { label:'Week streak', value: (playerData?.streak_weeks || 0) + ' weeks' },
                 ].map(item => (
                   <div key={item.label} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderBottom:'0.5px solid #ebebeb' }}>
