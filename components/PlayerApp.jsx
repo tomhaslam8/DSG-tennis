@@ -399,6 +399,30 @@ export default function PlayerApp({ user, playerName, playerData }) {
             </div>
           )}
 
+        {pview === 'history' && (
+            <div style={{ paddingBottom:16 }}>
+              <div style={{ paddingTop:14, paddingBottom:12 }}>
+                <div style={{ fontSize:16, fontWeight:600, color:'#0a0a0a' }}>Session history</div>
+              </div>
+              {bookings.length === 0 ? (
+                <div style={{ textAlign:'center', padding:'2rem 0', color:'#aaa', fontSize:13 }}>No sessions booked yet</div>
+              ) : [...bookings].reverse().map(b => (
+                <div key={b.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 0', borderBottom:'0.5px solid #f0f0f0' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <div style={{ width:7, height:7, borderRadius:'50%', background: b.status==='upcoming'?'#1D9E75':'#9FE1CB', flexShrink:0 }} />
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:500 }}>{b.name}</div>
+                      <div style={{ fontSize:11, color:'#888', marginTop:1 }}>{b.date} · {b.time}</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize:11, padding:'2px 8px', borderRadius:20, fontWeight:500, background: b.status==='upcoming'?'#E6F1FB':'#E1F5EE', color: b.status==='upcoming'?'#0C447C':'#0F6E56' }}>
+                    {b.status==='upcoming'?'Upcoming':'Attended'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
         </div>
 
         <nav style={{ display:'flex', borderTop:'0.5px solid #f0f0f0', padding:'8px 0 20px', background:'#fff' }}>
