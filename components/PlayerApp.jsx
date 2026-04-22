@@ -159,6 +159,15 @@ export default function PlayerApp({ user, playerName, playerData }) {
       setPackData(p => ({ ...p, credits_used: newUsedAfterCancel }));
     }
     setBookings(bs => bs.filter(b => b.id !== booking.id));
+    // Decrement stats
+    const newTotal = Math.max(0, (playerData?.total_sessions || 0) - 1);
+    const newMonthly = Math.max(0, (playerData?.sessions_this_month || 0) - 1);
+    await supabase.from('players').update({
+      total_sessions: newTotal,
+      sessions_this_month: newMonthly,
+    }).eq('id', user.id);
+    setLocalStats({ total: newTotal, monthly: newMonthly });
+    loadLeaderboard();
   }
 
   function doBook(s) { setSelected(s); setPview('confirm'); }
@@ -354,7 +363,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                   <div style={{ fontSize:10, fontWeight:600, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.06em', margin:'14px 0 8px' }}>Coming up</div>
                   {bookings.filter(b=>b.status==='upcoming').slice(0,2).map(b => {
                     const sessionDateTime = b.sessionDate ? new Date(b.sessionDate) : null;
-                    const hoursUntil = sessionDateTime ? (sessionDateTime - new Date()) / 3600000 : 24;
+                    const hoursUntil = sessionDateTime ? (sessionDateTime - new Date()) / 3600000 : 0;
                     const canCancel = hoursUntil > 12;
                     return (
                       <div key={b.id} style={{ display:'flex', alignItems:'center', gap:10, background:'#f5f5f5', borderRadius:10, padding:'10px 12px', marginBottom:6 }}>
