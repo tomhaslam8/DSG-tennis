@@ -190,7 +190,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
       session_date:     new Date().toISOString().split('T')[0],
     });
 
-    setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming', sessionDate: sessionDate.toISOString() }, ...b]);
+    setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming', sessionDate: sessionDate ? sessionDate.toISOString() : null }, ...b]);
     setPackData(p => ({ ...p, credits_used: newUsed }));
     setPview('success');
   }
