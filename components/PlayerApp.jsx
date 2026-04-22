@@ -7,58 +7,8 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-const WEEKLY_TEMPLATE = [
-  { id:1,  day:0, name:"Beginner",                   level:"Beginner",   time:"7:00pm", end:"8:00pm",  type:"lesson", credits:1,   cap:6  },
-  { id:2,  day:0, name:"Int / Adv",                  level:"Int / Adv",  time:"7:00pm", end:"8:30pm",  type:"lesson", credits:1.5, cap:5  },
-  { id:3,  day:1, name:"Beginner / Int",             level:"Beg / Int",  time:"10:00am",end:"11:30am", type:"lesson", credits:1.5, cap:10 },
-  { id:4,  day:1, name:"Beginner",                   level:"Beginner",   time:"7:00pm", end:"8:00pm",  type:"lesson", credits:1,   cap:6  },
-  { id:5,  day:1, name:"Int / Adv",                  level:"Int / Adv",  time:"7:00pm", end:"8:00pm",  type:"lesson", credits:1,   cap:5  },
-  { id:6,  day:1, name:"Int / Adv Social Matchplay", level:"Int / Adv",  time:"8:00pm", end:"9:00pm",  type:"social", credits:1,   cap:6  },
-  { id:7,  day:2, name:"Beginner",                   level:"Beginner",   time:"7:00pm", end:"8:00pm",  type:"lesson", credits:1,   cap:10 },
-  { id:8,  day:2, name:"Int / Adv",                  level:"Int / Adv",  time:"7:00pm", end:"8:30pm",  type:"lesson", credits:1.5, cap:5  },
-  { id:9,  day:3, name:"Beginner / Int",             level:"Beg / Int",  time:"10:00am",end:"11:30am", type:"lesson", credits:1.5, cap:10 },
-  { id:10, day:3, name:"Beginner",                   level:"Beginner",   time:"7:00pm", end:"8:00pm",  type:"lesson", credits:1,   cap:6  },
-  { id:11, day:4, name:"Social Matchplay",           level:"All levels", time:"7:30pm", end:"8:30pm",  type:"social", credits:1,   cap:12 },
-  { id:12, day:5, name:"Beg / Int / Adv",            level:"All levels", time:"9:00am", end:"10:00am", type:"lesson", credits:1,   cap:16 },
-  { id:13, day:5, name:"Club Social",                level:"All levels", time:"10:00am",end:"11:00am", type:"social", credits:1,   cap:16 },
-];
-
 const DAY_NAMES = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const MONTHS    = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-
-function generateSessions() {
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const sessions = [];
-  let uid = 1;
-  const seenDays = new Set();
-  // Show next 14 days but only first occurrence of each day
-  for (let daysAhead = 0; daysAhead < 14; daysAhead++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + daysAhead);
-    const jsDay = d.getDay();
-    const dayOfWeek = jsDay === 0 ? 6 : jsDay - 1;
-    if (seenDays.has(dayOfWeek)) continue;
-    const daySessions = WEEKLY_TEMPLATE.filter(t => t.day === dayOfWeek);
-    if (!daySessions.length) continue;
-    seenDays.add(dayOfWeek);
-    const dateStr = DAY_NAMES[dayOfWeek].slice(0,3) + " " + d.getDate() + " " + MONTHS[d.getMonth()];
-    daySessions.forEach(t => {
-      const seed = t.id * 7 + daysAhead * 13;
-      const booked = Math.floor((Math.sin(seed) * 0.5 + 0.5) * (t.cap * 0.7));
-      sessions.push({
-        id: uid++, name: t.name, level: t.level,
-        date: dateStr, day: DAY_NAMES[dayOfWeek],
-        time: t.time, end: t.end,
-        type: t.type, credits: t.credits,
-        spots: t.cap - booked, cap: t.cap,
-      });
-    });
-  }
-  return sessions;
-}
-
-const SESSIONS = generateSessions();
 
 export default function PlayerApp({ user, playerName, playerData }) {
   const [pview, setPview]       = useState('home');
@@ -72,6 +22,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
   const [boardTab, setBoardTab] = useState('monthly');
   const [loadingBoard, setLoadingBoard] = useState(true);
   const [confirming, setConfirming] = useState(false);
+  const [sessions, setSessions] = useState([]);
 
   const rawName = playerName || user?.email?.split('@')[0] || 'there';
   const firstName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
@@ -80,6 +31,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
     loadPackData();
     loadLeaderboard();
     loadBookings();
+    loadSessions();
     if (playerData) setLocalStats({ total: playerData.total_sessions||0, monthly: playerData.sessions_this_month||0 });
   }, [user]);
 
@@ -111,6 +63,51 @@ export default function PlayerApp({ user, playerName, playerData }) {
         sessionDate: b.session_datetime || null,
       })));
     }
+  }
+
+  async function loadSessions() {
+    const { data } = await supabase
+      .from('v_session_capacity')
+      .select('*')
+      .eq('active', true)
+      .order('day_of_week')
+      .order('start_time');
+    if (!data) return;
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const DAY_NAMES = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+    const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const built = [];
+    const seenDays = new Set();
+
+    for (let daysAhead = 0; daysAhead < 14; daysAhead++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + daysAhead);
+      const jsDay = d.getDay();
+      const dayOfWeek = jsDay === 0 ? 6 : jsDay - 1;
+      if (seenDays.has(dayOfWeek)) continue;
+      const daySessions = data.filter(s => s.day_of_week === dayOfWeek);
+      if (!daySessions.length) continue;
+      seenDays.add(dayOfWeek);
+      const dateStr = DAY_NAMES[dayOfWeek].slice(0,3) + " " + d.getDate() + " " + MONTHS[d.getMonth()];
+      daySessions.forEach(s => {
+        built.push({
+          id: s.id,
+          name: s.name,
+          level: s.level,
+          date: dateStr,
+          day: DAY_NAMES[dayOfWeek],
+          time: s.start_time,
+          end: s.end_time,
+          type: s.session_type,
+          credits: s.credits_cost,
+          spots: Math.max(0, s.capacity - (s.booked || 0)),
+          cap: s.capacity,
+        });
+      });
+    }
+    setSessions(built);
   }
 
   async function loadPackData() {
@@ -423,13 +420,13 @@ export default function PlayerApp({ user, playerName, playerData }) {
               {(() => {
                 const days = [];
                 const seen = {};
-                SESSIONS.forEach(s => { if (!seen[s.day]) { seen[s.day] = true; days.push(s.day); } });
+                sessions.forEach(s => { if (!seen[s.day]) { seen[s.day] = true; days.push(s.day); } });
                 return days.map(day => (
                   <div key={day} style={{ marginBottom:14 }}>
                     <div style={{ fontSize:10, fontWeight:600, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:6 }}>
-                      {SESSIONS.find(s=>s.day===day).date}
+                      {sessions.find(s=>s.day===day).date}
                     </div>
-                    {SESSIONS.filter(s=>s.day===day).map(s => {
+                    {sessions.filter(s=>s.day===day).map(s => {
                       const hasSocialCredit = packName === 'Discover' && socialCredits > 0;
                       const canAfford = (s.type === 'social' && !hasSocialCredit) ? credits >= 1 : s.type === 'social' ? true : credits >= s.credits;
                       const available = s.spots > 0 && canAfford;
