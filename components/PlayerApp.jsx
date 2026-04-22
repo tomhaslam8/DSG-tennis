@@ -123,9 +123,20 @@ export default function PlayerApp({ user, playerName, playerData }) {
       .maybeSingle();
     setPackData(data);
     setLoading(false);
-    // If Discover pack is complete, redirect to upgrade page
-    if (data && data.packs?.name === 'Discover' && data.credits_total - data.credits_used <= 0) {
-      window.location.href = '/upgrade';
+    if (data) {
+      const creditsLeft = data.credits_total - data.credits_used;
+      const isExpired = data.expires_at && new Date(data.expires_at) < new Date();
+      // Discover pack complete or expired → upgrade page
+      if (data.packs?.name === 'Discover' && (creditsLeft <= 0 || isExpired)) {
+        window.location.href = '/upgrade';
+      }
+      // Join 10 expired → purchase page with message
+      if (data.packs?.name === 'Join 10' && isExpired) {
+        window.location.href = '/purchase?expired=true';
+      }
+    } else {
+      // No active pack at all
+      // Don't redirect — show "get started" CTA on home screen
     }
   }
 
@@ -273,10 +284,16 @@ export default function PlayerApp({ user, playerName, playerData }) {
                 </div>
               )}
 
-              {credits <= 2 && credits > 0 && (
+              {credits <= 3 && credits > 0 && packName === 'Discover' && (
+                <div onClick={() => window.location.href='/upgrade'} style={{ background:'#FAEEDA', borderRadius:12, padding:'10px 12px', marginBottom:10, fontSize:12, color:'#633806', cursor:'pointer' }}>
+                  <div style={{ fontWeight:600 }}>Only {credits} credit{credits!==1?'s':''} left on your Discover pack</div>
+                  <div style={{ fontSize:11, marginTop:2 }}>Tap to upgrade to Join 10 →</div>
+                </div>
+              )}
+              {credits <= 3 && credits > 0 && packName === 'Join 10' && (
                 <div style={{ background:'#FAEEDA', borderRadius:12, padding:'10px 12px', marginBottom:10, fontSize:12, color:'#633806' }}>
-                  <div style={{ fontWeight:500 }}>Only {credits} credit{credits!==1?'s':''} left</div>
-                  <div style={{ fontSize:11, marginTop:2 }}>Top up to keep playing</div>
+                  <div style={{ fontWeight:600 }}>Only {credits} credit{credits!==1?'s':''} left</div>
+                  <div style={{ fontSize:11, marginTop:2 }}>Your pack will auto-renew after your last session</div>
                 </div>
               )}
 
