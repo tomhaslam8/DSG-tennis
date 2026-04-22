@@ -13,8 +13,25 @@ export default function AdminDashboard() {
   const [loading, setLoading]   = useState(true);
   const [tab, setTab]           = useState('players');
   const [filter, setFilter]     = useState('all');
+  const [authed, setAuthed]     = useState(false);
+  const [pw, setPw]             = useState('');
+  const [pwError, setPwError]   = useState(false);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('dsg_admin') === 'true') setAuthed(true);
+  }, []);
+
+  useEffect(() => { if (authed) loadData(); }, [authed]);
+
+  function checkPw() {
+    if (pw === process.env.NEXT_PUBLIC_ADMIN_PASSWORD || pw === 'dsgadmin2026') {
+      sessionStorage.setItem('dsg_admin', 'true');
+      setAuthed(true);
+      setPwError(false);
+    } else {
+      setPwError(true);
+    }
+  }
 
   async function loadData() {
     const { data } = await supabase
@@ -70,6 +87,26 @@ export default function AdminDashboard() {
     no_credits: { label: 'No credits',  bg: '#FCEBEB', color: '#A32D2D' },
     no_pack:    { label: 'No pack',     bg: '#F1EFE8', color: '#5F5E5A' },
   };
+
+  if (!authed) return (
+    <div style={{ display:'flex', justifyContent:'center', alignItems:'center', minHeight:'100vh', background:'#f0f9f5' }}>
+      <div style={{ width:320, background:'#fff', borderRadius:20, padding:'2rem', border:'0.5px solid #e0e0e0' }}>
+        <div style={{ fontSize:11, color:'#aaa', marginBottom:4 }}>Discover Sports · Tennis</div>
+        <h1 style={{ fontSize:20, fontWeight:600, margin:'0 0 16px' }}>Admin access</h1>
+        <input
+          type="password"
+          placeholder="Password"
+          value={pw}
+          onChange={e => setPw(e.target.value)}
+          onKeyDown={e => { if (e.key==='Enter') checkPw(); }}
+          style={{ width:'100%', padding:'10px 12px', borderRadius:10, border: pwError?'1px solid #E24B4A':'0.5px solid #ddd', fontSize:14, marginBottom:10, fontFamily:'inherit' }}
+          autoFocus
+        />
+        {pwError && <div style={{ fontSize:12, color:'#E24B4A', marginBottom:8 }}>Incorrect password</div>}
+        <button onClick={checkPw} style={{ width:'100%', padding:12, borderRadius:12, background:'#1D9E75', color:'#fff', border:'none', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Enter</button>
+      </div>
+    </div>
+  );
 
   if (loading) return (
     <div style={{ display:'flex', justifyContent:'center', alignItems:'center', minHeight:'100vh' }}>
