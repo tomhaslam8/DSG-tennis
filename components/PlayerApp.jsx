@@ -160,8 +160,10 @@ export default function PlayerApp({ user, playerName, playerData }) {
     }
     setBookings(bs => bs.filter(b => b.id !== booking.id));
     // Decrement stats
-    const newTotal = Math.max(0, (playerData?.total_sessions || 0) - 1);
-    const newMonthly = Math.max(0, (playerData?.sessions_this_month || 0) - 1);
+    const currentTotal = localStats?.total ?? playerData?.total_sessions ?? 0;
+    const currentMonthly = localStats?.monthly ?? playerData?.sessions_this_month ?? 0;
+    const newTotal = Math.max(0, currentTotal - 1);
+    const newMonthly = Math.max(0, currentMonthly - 1);
     await supabase.from('players').update({
       total_sessions: newTotal,
       sessions_this_month: newMonthly,
