@@ -37,7 +37,7 @@ export default function AdminDashboard() {
     const { data } = await supabase
       .from('players')
       .select(`
-        id, full_name, email, total_sessions, sessions_this_month,
+        id, full_name, email, phone, total_sessions, sessions_this_month,
         streak_weeks, play_frequency, skill_level, created_at,
         player_packs (
           id, credits_total, credits_used, credits_remaining,
@@ -175,7 +175,7 @@ export default function AdminDashboard() {
               <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
                 <thead>
                   <tr>
-                    {['Player','Pack','Credits','Sessions','Streak','Auto-renew','Status',''].map(h=>(
+                    {['Player','Phone','Pack','Credits','Sessions','Streak','Auto-renew','Status',''].map(h=>(
                       <th key={h} style={{ textAlign:'left', fontSize:11, fontWeight:500, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.04em', padding:'0 10px 10px', borderBottom:'0.5px solid #e8e8e8', whiteSpace:'nowrap' }}>{h}</th>
                     ))}
                   </tr>
@@ -190,6 +190,9 @@ export default function AdminDashboard() {
                         <td style={{ padding:'10px' }}>
                           <div style={{ fontWeight:500 }}>{p.full_name || 'Unknown'}</div>
                           <div style={{ fontSize:11, color:'#aaa', marginTop:1 }}>{p.email}</div>
+                        </td>
+                        <td style={{ padding:'10px' }}>
+                          {p.phone ? <a href={`tel:${p.phone}`} style={{ fontSize:13, color:'#0a0a0a', textDecoration:'none' }}>{p.phone}</a> : <span style={{ fontSize:12, color:'#ddd' }}>—</span>}
                         </td>
                         <td style={{ padding:'10px' }}>
                           <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20, background:'#f5f5f5', color:'#888', fontWeight:500 }}>{pack?.packs?.name || '—'}</span>

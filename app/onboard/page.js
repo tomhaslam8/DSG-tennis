@@ -14,6 +14,15 @@ const STEPS = [
     sub: "Just your first name is fine.",
     type: 'text',
     placeholder: 'Your first name',
+    required: true,
+  },
+  {
+    key: 'phone',
+    question: "What's your mobile number?",
+    sub: "We'll add you to our WhatsApp group so you never miss a session update.",
+    type: 'phone',
+    placeholder: '04xx xxx xxx',
+    required: false,
   },
   {
     key: 'skill_level',
@@ -33,8 +42,8 @@ const STEPS = [
     sub: "This sets your weekly goal and streak.",
     type: 'choice',
     options: [
-      { value: '1', label: 'Once a week',       sub: 'Casual but consistent' },
-      { value: '2', label: 'Twice a week',      sub: 'The sweet spot' },
+      { value: '1', label: 'Once a week',        sub: 'Casual but consistent' },
+      { value: '2', label: 'Twice a week',       sub: 'The sweet spot' },
       { value: '3', label: 'Three times a week', sub: 'Serious about it' },
     ],
   },
@@ -44,19 +53,19 @@ const STEPS = [
     sub: "Choose as many as you like.",
     type: 'choice',
     options: [
-      { value: 'fitness',   label: 'Get fit',        sub: 'Tennis as exercise' },
-      { value: 'improve',   label: 'Improve my game', sub: 'Technique and skills' },
-      { value: 'social',    label: 'Meet people',     sub: 'The social side' },
-      { value: 'all',       label: 'All of the above', sub: 'The full package' },
+      { value: 'fitness', label: 'Get fit',          sub: 'Tennis as exercise' },
+      { value: 'improve', label: 'Improve my game',  sub: 'Technique and skills' },
+      { value: 'social',  label: 'Meet people',      sub: 'The social side' },
+      { value: 'all',     label: 'All of the above', sub: 'The full package' },
     ],
   },
 ];
 
 export default function Onboard() {
-  const [step, setStep]     = useState(0);
-  const [answers, setAnswers] = useState({ name:'', skill_level:'', play_frequency:'', play_goal:'' });
+  const [step, setStep]       = useState(0);
+  const [answers, setAnswers] = useState({ name:'', phone:'', skill_level:'', play_frequency:'', play_goal:'' });
   const [loading, setLoading] = useState(false);
-  const [user, setUser]     = useState(null);
+  const [user, setUser]       = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -70,8 +79,9 @@ export default function Onboard() {
     if (step < STEPS.length - 1) setTimeout(() => setStep(s => s + 1), 300);
   }
 
-  function handleText(e) {
-    setAnswers(a => ({ ...a, name: e.target.value }));
+  function handleTextChange(e) {
+    const key = STEPS[step].key;
+    setAnswers(a => ({ ...a, [key]: e.target.value }));
   }
 
   async function handleSave() {
@@ -81,6 +91,7 @@ export default function Onboard() {
       id:             user.id,
       email:          user.email,
       full_name:      answers.name.trim(),
+      phone:          answers.phone.trim() || null,
       skill_level:    answers.skill_level,
       play_frequency: answers.play_frequency,
       play_goal:      answers.play_goal,
@@ -90,13 +101,12 @@ export default function Onboard() {
 
   const current = STEPS[step];
   const isLast  = step === STEPS.length - 1;
-  const canNext = answers[current.key] !== '';
 
   return (
     <div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'100vh',background:'#f0f9f5',padding:'1rem'}}>
       <div style={{width:'100%',maxWidth:380,background:'#fff',borderRadius:24,padding:'2rem',border:'0.5px solid #e0e0e0'}}>
 
-        {/* Progress dots */}
+        {/* Progress bar */}
         <div style={{display:'flex',gap:6,marginBottom:28}}>
           {STEPS.map((_,i) => (
             <div key={i} style={{height:4,flex:1,borderRadius:2,background: i<=step ? '#1D9E75' : '#e8e8e8',transition:'background 0.3s'}} />
@@ -107,24 +117,33 @@ export default function Onboard() {
         <h1 style={{fontSize:22,fontWeight:700,margin:'0 0 6px',color:'#0a0a0a'}}>{current.question}</h1>
         <p style={{fontSize:13,color:'#888',margin:'0 0 24px',lineHeight:1.6}}>{current.sub}</p>
 
-        {current.type === 'text' && (
+        {(current.type === 'text' || current.type === 'phone') && (
           <>
             <input
-              type="text"
+              type={current.type === 'phone' ? 'tel' : 'text'}
+              inputMode={current.type === 'phone' ? 'tel' : 'text'}
               placeholder={current.placeholder}
-              value={answers.name}
-              onChange={handleText}
-              onKeyDown={e => e.key==='Enter' && canNext && setStep(s=>s+1)}
+              value={answers[current.key]}
+              onChange={handleTextChange}
+              onKeyDown={e => { if (e.key==='Enter' && answers[current.key]) setStep(s=>s+1); }}
               style={{width:'100%',padding:'12px 14px',borderRadius:12,border:'0.5px solid #ddd',fontSize:16,marginBottom:14,fontFamily:'inherit',outline:'none'}}
               autoFocus
             />
             <button
               onClick={() => setStep(s=>s+1)}
-              disabled={!canNext}
-              style={{width:'100%',padding:13,borderRadius:12,background:canNext?'#1D9E75':'#ccc',color:'#fff',border:'none',fontSize:14,fontWeight:600,cursor:canNext?'pointer':'default',fontFamily:'inherit'}}
+              disabled={current.required && !answers[current.key]}
+              style={{width:'100%',padding:13,borderRadius:12,background:(current.required && !answers[current.key])?'#ccc':'#1D9E75',color:'#fff',border:'none',fontSize:14,fontWeight:600,cursor:(current.required && !answers[current.key])?'default':'pointer',fontFamily:'inherit'}}
             >
               Continue
             </button>
+            {!current.required && (
+              <button
+                onClick={() => setStep(s=>s+1)}
+                style={{width:'100%',padding:10,borderRadius:12,background:'transparent',border:'none',fontSize:12,color:'#aaa',cursor:'pointer',fontFamily:'inherit',marginTop:4}}
+              >
+                Skip for now
+              </button>
+            )}
           </>
         )}
 
