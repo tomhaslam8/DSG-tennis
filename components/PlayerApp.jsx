@@ -123,6 +123,10 @@ export default function PlayerApp({ user, playerName, playerData }) {
       .maybeSingle();
     setPackData(data);
     setLoading(false);
+    // If Discover pack is complete, redirect to upgrade page
+    if (data && data.packs?.name === 'Discover' && data.credits_total - data.credits_used <= 0) {
+      window.location.href = '/upgrade';
+    }
   }
 
   const credits = packData ? packData.credits_total - packData.credits_used : 0;
