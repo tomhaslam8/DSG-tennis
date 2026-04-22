@@ -22,7 +22,7 @@ const PACKS = [
     name: 'Join 10',
     price: 400,
     credits: 12,
-    description: '12 sessions, pay for 10. That's 2 free sessions on us.',
+    description: '12 sessions, pay for 10. 2 free sessions included.',
     expiry: '12 weeks · Auto-renews so you never stop playing',
     highlight: true,
   },
