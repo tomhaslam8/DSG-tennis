@@ -40,7 +40,7 @@ function WelcomeContent() {
         <div style={{ fontSize:11, color:'#aaa', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.05em' }}>Discover Sports · Tennis</div>
         <h1 style={{ fontSize:24, fontWeight:700, margin:'0 0 10px', color:'#0a0a0a' }}>You're in! 🎾</h1>
         <p style={{ fontSize:14, color:'#666', margin:'0 0 24px', lineHeight:1.7 }}>
-          Your Discover pack is ready. We've sent a login link to<br/>
+          Your {pack === 'join10' ? 'Join 10 pack' : 'Discover pack'} is ready. We've sent a login link to<br/>
           <strong style={{ color:'#0a0a0a' }}>{email}</strong>
         </p>
 

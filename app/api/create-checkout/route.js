@@ -19,7 +19,7 @@ export async function POST(req) {
     customer_email: email,
     line_items: [{ price: priceId, quantity: 1 }],
     metadata: { userId, packId },
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/welcome?email=${encodeURIComponent('{CHECKOUT_SESSION.customer_email}')}`,
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/welcome?email=${encodeURIComponent('{CHECKOUT_SESSION.customer_email}')}&pack=${packId}`,
     cancel_url:  `${process.env.NEXT_PUBLIC_APP_URL}/purchase`,
     payment_intent_data: {
       setup_future_usage: 'off_session',
