@@ -64,7 +64,7 @@ export default function Upgrade() {
         <div style={{ background:'#E1F5EE', borderRadius:16, padding:16, marginBottom:16, border:'2px solid #1D9E75' }}>
           <div style={{ fontSize:10, fontWeight:600, color:'#0F6E56', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:6 }}>Next step</div>
           <div style={{ fontSize:18, fontWeight:700, color:'#085041', marginBottom:4 }}>Join 10</div>
-          <div style={{ fontSize:13, color:'#0F6E56', marginBottom:12, lineHeight:1.6 }}>12 sessions, pay for 10. That's 2 free sessions — $66 value included.</div>
+          <div style={{ fontSize:13, color:'#0F6E56', marginBottom:12, lineHeight:1.6 }}>12 sessions, pay for 10. That's 2 free sessions — $80 value included.</div>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
             <div>
               <div style={{ fontSize:11, color:'#0F6E56' }}>✓ 12 credits loaded instantly</div>
