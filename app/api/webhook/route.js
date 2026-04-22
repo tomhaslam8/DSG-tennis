@@ -9,8 +9,8 @@ const supabase = createClient(
 );
 
 const PACK_CONFIG = {
-  discover: { credits: 3,  expiryDays: 21,  name: 'Discover' },
-  join10:   { credits: 12, expiryDays: 84, name: 'Join 10'  },
+  discover: { credits: 3,  expiryDays: 21,  name: 'Discover', socialCredits: 1 },
+  join10:   { credits: 12, expiryDays: 84, name: 'Join 10',   socialCredits: 0 },
 };
 
 export async function POST(req) {
@@ -67,6 +67,7 @@ export async function POST(req) {
       pack_id:       packRow.id,
       credits_total: config.credits,
       credits_used:  0,
+      social_credits: config.socialCredits,
       status:        'active',
       auto_renew:    true,
       expires_at:    expiresAt,
