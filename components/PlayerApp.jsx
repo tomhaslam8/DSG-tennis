@@ -248,7 +248,22 @@ export default function PlayerApp({ user, playerName, playerData }) {
             <div style={{ paddingBottom:16 }}>
               <div style={{ padding:'12px 0 10px', display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                 <div>
-                  <div style={{ fontSize:11, color:'#aaa' }}>Good morning</div>
+                  <div style={{ fontSize:11, color:'#aaa' }}>
+                    {(() => {
+                      const hour = new Date().getHours();
+                      const sessions = localStats?.total ?? playerData?.total_sessions ?? 0;
+                      const streak = playerData?.streak_weeks || 0;
+                      const todayStr = new Date().getDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][new Date().getMonth()];
+                      const hasTonight = bookings.some(b => b.status==='upcoming' && b.date && b.date.includes(todayStr));
+                      if (hasTonight) return "You're playing tonight 🎾";
+                      if (streak >= 3) return streak + " week streak — keep it going 🔥";
+                      if (sessions === 0) return "Welcome to DSG Tennis 👋";
+                      if (sessions >= 10 && sessions % 10 === 0) return sessions + " sessions — legend 🏆";
+                      if (hour < 12) return "Good morning";
+                      if (hour < 17) return "Good afternoon";
+                      return "Good evening";
+                    })()}
+                  </div>
                   <div style={{ fontSize:22, fontWeight:600, lineHeight:1.2, marginTop:2, color:'#0a0a0a' }}>{firstName}</div>
                 </div>
                 {playerData?.streak_weeks > 0 && (
