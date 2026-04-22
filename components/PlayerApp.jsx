@@ -175,7 +175,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
       session_date:     new Date().toISOString().split('T')[0],
     });
 
-    setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming' }, ...b]);
+    setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming', sessionDate: sessionDate.toISOString() }, ...b]);
     setPackData(p => ({ ...p, credits_used: newUsed }));
     setPview('success');
   }
@@ -311,7 +311,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                   <div style={{ fontSize:10, fontWeight:600, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.06em', margin:'14px 0 8px' }}>Coming up</div>
                   {bookings.filter(b=>b.status==='upcoming').slice(0,2).map(b => {
                     const sessionDateTime = b.sessionDate ? new Date(b.sessionDate) : null;
-                    const hoursUntil = sessionDateTime ? (sessionDateTime - new Date()) / 3600000 : 999;
+                    const hoursUntil = sessionDateTime ? (sessionDateTime - new Date()) / 3600000 : 24;
                     const canCancel = hoursUntil > 6;
                     return (
                       <div key={b.id} style={{ display:'flex', alignItems:'center', gap:10, background:'#f5f5f5', borderRadius:10, padding:'10px 12px', marginBottom:6 }}>
