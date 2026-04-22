@@ -10,7 +10,7 @@ const supabase = createClient(
 
 const PACK_CONFIG = {
   discover: { credits: 3,  expiryDays: 21,  name: 'Discover' },
-  join10:   { credits: 12, expiryDays: null, name: 'Join 10'  },
+  join10:   { credits: 12, expiryDays: 84, name: 'Join 10'  },
 };
 
 export async function POST(req) {
