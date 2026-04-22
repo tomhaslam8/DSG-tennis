@@ -460,7 +460,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                 {[
                   { label:'Level', value: playerData?.skill_level ? playerData.skill_level.charAt(0).toUpperCase() + playerData.skill_level.slice(1) : '—' },
                   { label:'Weekly goal', value: playerData?.play_frequency ? playerData.play_frequency + 'x per week' : '—' },
-                  { label:'Play goal', value: playerData?.play_goal ? playerData.play_goal.charAt(0).toUpperCase() + playerData.play_goal.slice(1) : '—' },
+                  { label:'Play goal', value: playerData?.play_goal ? (playerData.play_goal === 'all' ? 'All of the above' : playerData.play_goal.charAt(0).toUpperCase() + playerData.play_goal.slice(1)) : '—' },
                   { label:'Member since', value: playerData?.created_at ? new Date(playerData.created_at).toLocaleDateString('en-AU', { month:'long', year:'numeric' }) : '—' },
                 ].map(item => (
                   <div key={item.label} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderBottom:'0.5px solid #ebebeb' }}>
