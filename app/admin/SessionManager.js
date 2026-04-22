@@ -44,15 +44,31 @@ export default function SessionManager({ supabase }) {
     nextDate.setDate(today.getDate() + daysAhead);
     const dateKey = `${nextDate.getFullYear()}-${String(nextDate.getMonth()+1).padStart(2,'0')}-${String(nextDate.getDate()).padStart(2,'0')}`;
 
-    const { data } = await supabase
+    const { data: bookingData } = await supabase
       .from('bookings')
-      .select('id, player_id, session_date, players(full_name, email, phone)')
+      .select('id, player_id, session_date')
       .eq('session_id', sessionId)
       .eq('session_date', dateKey)
       .eq('status', 'confirmed')
       .order('created_at');
 
-    setBookingsBySession(prev => ({ ...prev, [sessionId]: { players: data || [], date: dateKey } }));
+    // Fetch player details separately since FK may not be set up
+    const playerIds = (bookingData || []).map(b => b.player_id);
+    let playerMap = {};
+    if (playerIds.length > 0) {
+      const { data: playerData } = await supabase
+        .from('players')
+        .select('id, full_name, email, phone')
+        .in('id', playerIds);
+      (playerData || []).forEach(p => { playerMap[p.id] = p; });
+    }
+
+    const enriched = (bookingData || []).map(b => ({
+      ...b,
+      players: playerMap[b.player_id] || null,
+    }));
+
+    setBookingsBySession(prev => ({ ...prev, [sessionId]: { players: enriched, date: dateKey } }));
   }
 
   async function toggleExpand(sessionId) {
