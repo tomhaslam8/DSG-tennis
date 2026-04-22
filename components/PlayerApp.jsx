@@ -427,7 +427,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
 
         <nav style={{ display:'flex', borderTop:'0.5px solid #f0f0f0', padding:'8px 0 20px', background:'#fff' }}>
           {[{id:'home',l:'Home'},{id:'book',l:'Book'},{id:'history',l:'History'},{id:'account',l:'Account'}].map(n=>(
-            <button key={n.id} onClick={() => setPview(n.id==='history'||n.id==='account'?'home':n.id)} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2, background:'none', border:'none', cursor:'pointer', padding:'4px 0' }}>
+            <button key={n.id} onClick={() => setPview(n.id==='account'?'home':n.id)} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2, background:'none', border:'none', cursor:'pointer', padding:'4px 0' }}>
               <div style={{ width:6, height:6, borderRadius:'50%', background: pview===n.id?'#1D9E75':'transparent', marginBottom:1 }} />
               <span style={{ fontSize:10, color: pview===n.id?'#1D9E75':'#aaa' }}>{n.l}</span>
             </button>
