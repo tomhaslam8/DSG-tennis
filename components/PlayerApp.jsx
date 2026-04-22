@@ -58,6 +58,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
         status: b.status === 'confirmed' ? 'upcoming' : 'attended',
         type: b.session_type || 'lesson',
         sessionDate: b.session_datetime || null,
+        credits: b.credits_deducted || 1,
       })));
     }
   }
@@ -129,14 +130,25 @@ export default function PlayerApp({ user, playerName, playerData }) {
   const used = packTotal - credits;
 
   async function cancelBooking(booking) {
-    if (!window.confirm('Cancel this booking? Your credit will be refunded.')) return;
+    if (!window.confirm(`Cancel this booking? Your ${booking.credits === 1.5 ? '1.5 credits' : 'credit'} will be refunded.`)) return;
     const isSocial = booking.type === 'social';
     const isDiscover = packData?.packs?.name === 'Discover';
-    if (isSocial && isDiscover) {
+
+    // Fetch the actual credits_deducted from the booking record
+    const { data: bookingRecord } = await supabase
+      .from('bookings')
+      .select('credits_deducted')
+      .eq('id', booking.id)
+      .single();
+    const creditsToRefund = bookingRecord?.credits_deducted ?? booking.credits ?? 1;
+
+    if (isSocial && isDiscover && creditsToRefund === 0) {
+      // Was paid with a social credit — refund the social credit
       await supabase.from('player_packs').update({ social_credits: (packData.social_credits || 0) + 1 }).eq('id', packData.id);
       setPackData(p => ({ ...p, social_credits: (p.social_credits || 0) + 1 }));
     } else {
-      const newUsedAfterCancel = Math.max(0, packData.credits_used - 1);
+      // Refund exact credits deducted
+      const newUsedAfterCancel = Math.max(0, packData.credits_used - creditsToRefund);
       await supabase.from('player_packs').update({ credits_used: newUsedAfterCancel }).eq('id', packData.id);
       setPackData(p => ({ ...p, credits_used: newUsedAfterCancel }));
     }
@@ -210,7 +222,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
     // Update all local state (no page reload needed)
     setPackData(p => ({ ...p, credits_used: newUsed, social_credits: newSocial }));
     setLocalStats({ total: newTotal, monthly: newMonthly });
-    setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming', sessionDate: sessionDate ? sessionDate.toISOString() : null }, ...b]);
+    setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming', sessionDate: sessionDate ? sessionDate.toISOString() : null, type: selected.type, credits: useSocialCredit ? 0 : selected.credits }, ...b]);
     loadLeaderboard();
     setConfirming(false);
     setPview('success');
