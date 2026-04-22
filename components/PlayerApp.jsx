@@ -72,6 +72,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
   const [boardTab, setBoardTab] = useState('monthly');
   const [loadingBoard, setLoadingBoard] = useState(true);
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [confirming, setConfirming] = useState(false);
 
   const rawName = playerName || user?.email?.split('@')[0] || 'there';
   const firstName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
@@ -184,6 +185,8 @@ export default function PlayerApp({ user, playerName, playerData }) {
   function doBook(s) { setSelected(s); setPview('confirm'); }
 
   async function doConfirm() {
+    if (confirming) return;
+    setConfirming(true);
     const isSocial = selected.type === 'social';
     const isDiscover = packData?.packs?.name === 'Discover';
     const useSocialCredit = isSocial && isDiscover && packData.social_credits > 0;
@@ -237,6 +240,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
     setLocalStats({ total: newTotal, monthly: newMonthly });
     setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming', sessionDate: sessionDate ? sessionDate.toISOString() : null }, ...b]);
     loadLeaderboard();
+    setConfirming(false);
     setPview('success');
   }
 
@@ -476,7 +480,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                   <span style={{ color:'#888' }}>Credits after</span><span style={{ fontWeight:500 }}>{(credits - selected.credits).toFixed(1).replace('.0','')} remaining</span>
                 </div>
               </div>
-              <button onClick={doConfirm} style={{ width:'100%', padding:12, borderRadius:12, background:'#1D9E75', color:'#fff', border:'none', fontSize:14, fontWeight:600, cursor:'pointer', marginBottom:8 }}>Confirm booking</button>
+              <button onClick={doConfirm} disabled={confirming} style={{ width:'100%', padding:12, borderRadius:12, background: confirming ? '#9FE1CB' : '#1D9E75', color:'#fff', border:'none', fontSize:14, fontWeight:600, cursor: confirming ? 'default' : 'pointer', marginBottom:8 }}>{confirming ? 'Booking...' : 'Confirm booking'}</button>
               <button onClick={() => setPview('book')} style={{ width:'100%', padding:12, borderRadius:12, background:'transparent', border:'0.5px solid #e0e0e0', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>Choose different session</button>
             </div>
           )}
