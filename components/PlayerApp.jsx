@@ -171,8 +171,9 @@ export default function PlayerApp({ user, playerName, playerData }) {
 
     if (isSocial && isDiscover && creditsToRefund === 0) {
       // Was paid with a social credit — refund the social credit
-      await supabase.from('player_packs').update({ social_credits: (packData.social_credits || 0) + 1 }).eq('id', packData.id);
-      setPackData(p => ({ ...p, social_credits: (p.social_credits || 0) + 1 }));
+      const newSocialCredits = Math.min(1, (packData.social_credits || 0) + 1);
+      await supabase.from('player_packs').update({ social_credits: newSocialCredits }).eq('id', packData.id);
+      setPackData(p => ({ ...p, social_credits: newSocialCredits }));
     } else {
       // Refund exact credits deducted
       const newUsedAfterCancel = Math.max(0, packData.credits_used - creditsToRefund);
