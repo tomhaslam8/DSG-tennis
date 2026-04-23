@@ -305,7 +305,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                       const sessions = localStats?.total ?? playerData?.total_sessions ?? 0;
                       const streak = playerData?.streak_weeks || 0;
                       const todayStr = new Date().getDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][new Date().getMonth()];
-                      const hasTonight = bookings.some(b => b.status==='upcoming' && b.date && b.date.includes(todayStr));
+                      const hasTonight = bookings.some(b => b.status==='upcoming' && b.date && b.date.includes(todayStr) && (!b.sessionDate || new Date(b.sessionDate) > new Date()));
                       if (hasTonight) return "You're playing tonight 🎾";
                       if (streak >= 3) return streak + " week streak — keep it going 🔥";
                       if (sessions === 0) return "Welcome to DSG Tennis 👋";
@@ -426,10 +426,10 @@ export default function PlayerApp({ user, playerName, playerData }) {
                 })}
               </div>
 
-{bookings.filter(b=>b.status==='upcoming').length > 0 && (
+{bookings.filter(b=>b.status==='upcoming' && (!b.sessionDate || new Date(b.sessionDate) > new Date())).length > 0 && (
                 <>
                   <div style={{ fontSize:10, fontWeight:600, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.06em', margin:'14px 0 8px' }}>Coming up</div>
-                  {bookings.filter(b=>b.status==='upcoming').slice(0,2).map(b => {
+                  {bookings.filter(b=>b.status==='upcoming' && (!b.sessionDate || new Date(b.sessionDate) > new Date())).slice(0,2).map(b => {
                     const sessionDateTime = b.sessionDate ? new Date(b.sessionDate) : null;
                     const hoursUntil = sessionDateTime ? (new Date(sessionDateTime) - new Date()) / 3600000 : 999;
                     const canCancel = hoursUntil > 12;
