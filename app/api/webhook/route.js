@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { ghlUpsertContact } from '../../../lib/ghl';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supabase = createClient(
@@ -10,7 +11,7 @@ const supabase = createClient(
 
 const PACK_CONFIG = {
   discover: { credits: 3,  expiryDays: 21,  name: 'Discover', socialCredits: 1 },
-  join10:   { credits: 12, expiryDays: 84, name: 'Join 10',   socialCredits: 0 },
+  join10:   { credits: 12, expiryDays: 84,  name: 'Join 10',  socialCredits: 0 },
 };
 
 export async function POST(req) {
@@ -37,7 +38,7 @@ export async function POST(req) {
       return NextResponse.json({ received: true });
     }
 
-    // Upsert player first
+    // Upsert player in Supabase
     const { error: playerError } = await supabase.from('players').upsert({
       id:        userId,
       email:     session.customer_email || '',
@@ -46,7 +47,7 @@ export async function POST(req) {
 
     if (playerError) console.error('Player upsert error:', playerError);
 
-    // Get pack id
+    // Get pack id from packs table
     const { data: packRow, error: packError } = await supabase
       .from('packs')
       .select('id')
@@ -63,18 +64,33 @@ export async function POST(req) {
       : null;
 
     const { error: packInsertError } = await supabase.from('player_packs').insert({
-      player_id:     userId,
-      pack_id:       packRow.id,
-      credits_total: config.credits,
-      credits_used:  0,
+      player_id:      userId,
+      pack_id:        packRow.id,
+      credits_total:  config.credits,
+      credits_used:   0,
       social_credits: config.socialCredits,
-      status:        'active',
-      auto_renew:    true,
-      expires_at:    expiresAt,
+      status:         'active',
+      auto_renew:     true,
+      expires_at:     expiresAt,
     });
 
-    if (packInsertError) console.error('Pack insert error:', packInsertError);
-    else console.log('Pack created successfully for', userId);
+    if (packInsertError) {
+      console.error('Pack insert error:', packInsertError);
+    } else {
+      console.log('Pack created successfully for', userId);
+
+      // Create contact in GHL and tag for welcome email workflow
+      await ghlUpsertContact({
+        email:        session.customer_email || '',
+        firstName:    (session.customer_email || '').split('@')[0],
+        tags:         ['dsg-tennis', config.name === 'Discover' ? 'discover-purchased' : 'join10-purchased'],
+        customFields: {
+          pack_type:          config.name,
+          credits_total:      String(config.credits),
+          pack_purchased_at:  new Date().toISOString().split('T')[0],
+        },
+      });
+    }
   }
 
   return NextResponse.json({ received: true });

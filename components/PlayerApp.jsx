@@ -260,6 +260,21 @@ export default function PlayerApp({ user, playerName, playerData }) {
     setBookings(b => [{ id: Date.now(), name: selected.name, date: selected.date, time: selected.time, status: 'upcoming', sessionDate: sessionDate ? sessionDate.toISOString() : null, type: selected.type, credits: useSocialCredit ? 0 : selected.credits }, ...b]);
     loadLeaderboard();
     loadSessions();
+
+    // GHL email triggers (fire and forget — won't affect booking if they fail)
+    const creditsLeft = packData.credits_total - newUsed;
+    const ghlData = { firstName, sessionName: selected.name, sessionDate: selected.date, sessionTime: selected.time, creditsRemaining: creditsLeft };
+    fetch('/api/ghl-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ trigger:'booking_confirmation', email: user.email, firstName, data: ghlData }) }).catch(()=>{});
+    if (creditsLeft === 3 && packName === 'Join 10') {
+      fetch('/api/ghl-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ trigger:'low_credits_3', email: user.email, firstName, data: { firstName } }) }).catch(()=>{});
+    }
+    if (creditsLeft === 1 && packName === 'Join 10') {
+      fetch('/api/ghl-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ trigger:'low_credits_1', email: user.email, firstName, data: { firstName } }) }).catch(()=>{});
+    }
+    if (creditsLeft <= 0 && packName === 'Discover') {
+      fetch('/api/ghl-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ trigger:'discover_complete', email: user.email, firstName, data: { firstName } }) }).catch(()=>{});
+    }
+
     setConfirming(false);
     setPview('success');
   }
