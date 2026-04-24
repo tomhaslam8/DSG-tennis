@@ -122,6 +122,29 @@ export default function AdminDashboard() {
     </div>
   );
 
+  async function addCredits() {
+    if (!creditModal) return;
+    setAddingCredits(true);
+    const packNames = { discover: 'Discover', join10: 'Join 10' };
+    const { data: packRow } = await supabase.from('packs').select('id').eq('name', packNames[creditForm.packType]).single();
+    if (!packRow) { alert('Pack not found'); setAddingCredits(false); return; }
+    const expiresAt = creditForm.expiryDays ? new Date(Date.now() + creditForm.expiryDays * 86400000).toISOString() : null;
+    await supabase.from('player_packs').insert({
+      player_id:      creditModal.playerId,
+      pack_id:        packRow.id,
+      credits_total:  creditForm.credits,
+      credits_used:   0,
+      social_credits: creditForm.packType === 'discover' ? 1 : 0,
+      status:         'active',
+      auto_renew:     false,
+      expires_at:     expiresAt,
+    });
+    setAddingCredits(false);
+    setCreditModal(null);
+    loadPlayers();
+    alert(`${creditForm.credits} credits added for ${creditModal.playerName}`);
+  }
+
   return (
     <div style={{ display:'flex', minHeight:'100vh', fontFamily:'system-ui, sans-serif' }}>
       {/* Sidebar */}
@@ -218,7 +241,10 @@ export default function AdminDashboard() {
                           <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20, fontWeight:500, background:sc.bg, color:sc.color }}>{sc.label}</span>
                         </td>
                         <td style={{ padding:'10px' }}>
-                          <button onClick={() => markAttended(p.id)} style={{ fontSize:11, padding:'4px 10px', borderRadius:6, border:'0.5px solid #1D9E75', color:'#1D9E75', background:'transparent', cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>+ Session</button>
+                          <div style={{ display:'flex', gap:6 }}>
+                            <button onClick={() => markAttended(p.id)} style={{ fontSize:11, padding:'4px 10px', borderRadius:6, border:'0.5px solid #1D9E75', color:'#1D9E75', background:'transparent', cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>+ Session</button>
+                            <button onClick={() => setCreditModal({ playerId: p.id, playerName: p.full_name || p.email, email: p.email })} style={{ fontSize:11, padding:'4px 10px', borderRadius:6, border:'0.5px solid #0F6E56', color:'#fff', background:'#0F6E56', cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>+ Credits</button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -259,6 +285,35 @@ export default function AdminDashboard() {
         )}
 
       </div>
+      {/* Add Credits Modal */}
+      {creditModal && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }}>
+          <div style={{ background:'#fff', borderRadius:16, padding:24, width:320, boxShadow:'0 8px 32px rgba(0,0,0,0.12)' }}>
+            <div style={{ fontSize:15, fontWeight:600, marginBottom:4 }}>Add Credits</div>
+            <div style={{ fontSize:12, color:'#888', marginBottom:20 }}>For {creditModal.playerName}</div>
+            <div style={{ marginBottom:14 }}>
+              <div style={{ fontSize:12, color:'#888', marginBottom:6 }}>Pack type</div>
+              <div style={{ display:'flex', gap:8 }}>
+                {[{value:'discover',label:'Discover'},{value:'join10',label:'Join 10'}].map(opt => (
+                  <button key={opt.value} onClick={() => setCreditForm(f => ({ ...f, packType: opt.value, expiryDays: opt.value==='discover'?21:84 }))} style={{ flex:1, padding:'8px 0', borderRadius:8, border: creditForm.packType===opt.value?'2px solid #1D9E75':'0.5px solid #e0e0e0', background: creditForm.packType===opt.value?'#E1F5EE':'#fff', fontFamily:'inherit', fontSize:13, fontWeight:500, cursor:'pointer', color: creditForm.packType===opt.value?'#085041':'#0a0a0a' }}>{opt.label}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <div style={{ fontSize:12, color:'#888', marginBottom:6 }}>Number of credits</div>
+              <input type="number" min="1" max="20" value={creditForm.credits} onChange={e => setCreditForm(f => ({ ...f, credits: parseInt(e.target.value) || 1 }))} style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:'0.5px solid #ddd', fontSize:16, fontFamily:'inherit', outline:'none' }} />
+            </div>
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:12, color:'#888', marginBottom:6 }}>Expires in (days) — leave 0 for no expiry</div>
+              <input type="number" min="0" max="365" value={creditForm.expiryDays} onChange={e => setCreditForm(f => ({ ...f, expiryDays: parseInt(e.target.value) || 0 }))} style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:'0.5px solid #ddd', fontSize:16, fontFamily:'inherit', outline:'none' }} />
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={addCredits} disabled={addingCredits} style={{ flex:1, padding:'10px 0', borderRadius:8, background: addingCredits?'#9FE1CB':'#1D9E75', color:'#fff', border:'none', fontFamily:'inherit', fontSize:13, fontWeight:600, cursor:'pointer' }}>{addingCredits ? 'Adding...' : 'Add Credits'}</button>
+              <button onClick={() => setCreditModal(null)} style={{ flex:1, padding:'10px 0', borderRadius:8, background:'transparent', border:'0.5px solid #e0e0e0', fontFamily:'inherit', fontSize:13, cursor:'pointer' }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
