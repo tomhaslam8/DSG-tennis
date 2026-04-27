@@ -343,6 +343,23 @@ export default function PlayerApp({ user, playerName, playerData }) {
 
           {pview === 'home' && (
             <div style={{ paddingBottom:16 }}>
+
+              {showWhatsApp && (
+                <div style={{ background:'#E1F5EE', borderRadius:12, padding:'12px 14px', marginTop:8, marginBottom:14, display:'flex', alignItems:'center', gap:10 }}>
+                  <div style={{ fontSize:24, flexShrink:0 }}>💬</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:12, fontWeight:600, color:'#085041' }}>Join our WhatsApp community</div>
+                    <div style={{ fontSize:11, color:'#0F6E56', marginTop:2, lineHeight:1.4 }}>Session updates, weather alerts & fellow players</div>
+                    <a href="https://chat.whatsapp.com/BpE2dJstVfPAzpDoKcdHrz?mode=gi_t" target="_blank" rel="noopener noreferrer"
+                      onClick={() => { localStorage.setItem('wa_dismissed','1'); setShowWhatsApp(false); }}
+                      style={{ display:'inline-block', marginTop:6, fontSize:12, fontWeight:600, color:'#fff', background:'#25D366', padding:'4px 12px', borderRadius:20, textDecoration:'none' }}>
+                      Join now →
+                    </a>
+                  </div>
+                  <button onClick={() => { localStorage.setItem('wa_dismissed','1'); setShowWhatsApp(false); }}
+                    style={{ background:'transparent', border:'none', fontSize:18, color:'#aaa', cursor:'pointer', flexShrink:0, padding:4 }}>✕</button>
+                </div>
+              )}
               <div style={{ padding:'12px 0 10px', display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                 <div>
                   <div style={{ fontSize:11, color:'#aaa' }}>
