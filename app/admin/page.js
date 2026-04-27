@@ -16,6 +16,9 @@ export default function AdminDashboard() {
   const [authed, setAuthed]     = useState(false);
   const [pw, setPw]             = useState('');
   const [pwError, setPwError]   = useState(false);
+  const [creditModal, setCreditModal] = useState(null);
+  const [creditForm, setCreditForm] = useState({ packType: 'join10', credits: 10, expiryDays: 84 });
+  const [addingCredits, setAddingCredits] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && sessionStorage.getItem('dsg_admin') === 'true') setAuthed(true);
