@@ -63,6 +63,12 @@ export async function POST(req) {
       ? new Date(Date.now() + config.expiryDays * 86400000).toISOString()
       : null;
 
+    // Mark any existing active pack as completed (handles renewals cleanly)
+    await supabase.from('player_packs')
+      .update({ status: 'completed', completed_at: new Date().toISOString() })
+      .eq('player_id', userId)
+      .eq('status', 'active');
+
     const { error: packInsertError } = await supabase.from('player_packs').insert({
       player_id:      userId,
       pack_id:        packRow.id,

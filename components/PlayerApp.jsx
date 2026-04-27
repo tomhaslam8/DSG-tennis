@@ -493,16 +493,23 @@ export default function PlayerApp({ user, playerName, playerData }) {
                       const canAfford = (s.type === 'social' && !hasSocialCredit) ? credits >= 1 : s.type === 'social' ? true : credits >= s.credits;
                       const available = s.spots > 0 && canAfford;
                       return (
-                        <button key={s.id} onClick={() => available && doBook(s)} disabled={!available} style={{ width:'100%', display:'flex', justifyContent:'space-between', alignItems:'flex-start', background:'#fff', border:'0.5px solid #e8e8e8', borderRadius:12, padding:'10px 12px', marginBottom:6, cursor:available?'pointer':'default', textAlign:'left', opacity:!available?0.45:1, fontFamily:'inherit' }}>
-                          <div style={{ flex:1, minWidth:0 }}>
-                            <div style={{ fontSize:12, fontWeight:500, color:'#0a0a0a' }}>{s.name}</div>
-                            <div style={{ fontSize:11, color:'#888', marginTop:2 }}>{s.time}–{s.end} · {s.level}</div>
-                            <div style={{ fontSize:11, marginTop:3, color: s.spots===0?'#E24B4A':!canAfford?'#854F0B':'#0F6E56', fontWeight:500 }}>
-                              {s.spots===0?'Full':!canAfford?<span onClick={()=>window.location.href='/purchase'} style={{cursor:'pointer',textDecoration:'underline'}}>Not enough credits — top up →</span>:`${s.spots} spot${s.spots!==1?'s':''} left`}
+                        <div key={s.id} style={{ marginBottom:6 }}>
+                          <button onClick={() => available && doBook(s)} disabled={!available} style={{ width:'100%', display:'flex', justifyContent:'space-between', alignItems:'flex-start', background:'#fff', border:'0.5px solid #e8e8e8', borderRadius:12, padding:'10px 12px', cursor:available?'pointer':'default', textAlign:'left', opacity: s.spots===0 ? 0.45 : 1, fontFamily:'inherit' }}>
+                            <div style={{ flex:1, minWidth:0 }}>
+                              <div style={{ fontSize:12, fontWeight:500, color:'#0a0a0a' }}>{s.name}</div>
+                              <div style={{ fontSize:11, color:'#888', marginTop:2 }}>{s.time}–{s.end} · {s.level}</div>
+                              <div style={{ fontSize:11, marginTop:3, color: s.spots===0?'#E24B4A':'#0F6E56', fontWeight:500 }}>
+                                {s.spots===0?'Full':`${s.spots} spot${s.spots!==1?'s':''} left`}
+                              </div>
                             </div>
-                          </div>
-                          <div style={{ fontSize:10, padding:'2px 8px', borderRadius:20, background: s.type==='social'&&socialCredits>0?'#EEEDFE':s.credits===1?'#E1F5EE':'#EEEDFE', color: s.type==='social'&&socialCredits>0?'#3C3489':s.credits===1?'#0F6E56':'#3C3489', fontWeight:500, whiteSpace:'nowrap', flexShrink:0, marginLeft:8, marginTop:2 }}>{s.type === 'social' ? (socialCredits > 0 ? '1 social credit' : '1 credit') : s.credits === 1 ? '1 credit' : '1.5 credits'}</div>
-                        </button>
+                            <div style={{ fontSize:10, padding:'2px 8px', borderRadius:20, background: s.type==='social'&&socialCredits>0?'#EEEDFE':s.credits===1?'#E1F5EE':'#EEEDFE', color: s.type==='social'&&socialCredits>0?'#3C3489':s.credits===1?'#0F6E56':'#3C3489', fontWeight:500, whiteSpace:'nowrap', flexShrink:0, marginLeft:8, marginTop:2 }}>{s.type === 'social' ? (socialCredits > 0 ? '1 social credit' : '1 credit') : s.credits === 1 ? '1 credit' : '1.5 credits'}</div>
+                          </button>
+                          {!canAfford && s.spots > 0 && (
+                            <button onClick={() => window.location.href='/purchase'} style={{ width:'100%', padding:'8px 12px', borderRadius:8, background:'#0F6E56', color:'#fff', border:'none', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginTop:4 }}>
+                              Not enough credits — top up →
+                            </button>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
