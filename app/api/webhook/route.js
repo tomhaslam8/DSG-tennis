@@ -10,8 +10,8 @@ const supabase = createClient(
 );
 
 const PACK_CONFIG = {
-  discover: { credits: 3,  expiryDays: 21,  name: 'Discover', socialCredits: 1 },
-  join10:   { credits: 12, expiryDays: 84,  name: 'Join 10',  socialCredits: 0 },
+  discover: { credits: 3,  expiryDays: 21, name: 'Discover', socialCredits: 1 },
+  join10:   { credits: 12, expiryDays: 84, name: 'Join 10',  socialCredits: 0 },
 };
 
 export async function POST(req) {
@@ -38,16 +38,31 @@ export async function POST(req) {
       return NextResponse.json({ received: true });
     }
 
-    // Upsert player in Supabase
+    // Get payment intent to find payment method for future charges
+    let stripePaymentMethodId = null;
+    let stripeCustomerId = session.customer || null;
+    try {
+      if (session.payment_intent) {
+        const pi = await stripe.paymentIntents.retrieve(session.payment_intent);
+        stripePaymentMethodId = pi.payment_method;
+        if (!stripeCustomerId) stripeCustomerId = pi.customer;
+      }
+    } catch (e) {
+      console.error('Failed to retrieve payment intent:', e.message);
+    }
+
+    // Upsert player - save stripe customer ID and payment method
     const { error: playerError } = await supabase.from('players').upsert({
-      id:        userId,
-      email:     session.customer_email || '',
-      full_name: (session.customer_email || '').split('@')[0],
+      id:                      userId,
+      email:                   session.customer_email || '',
+      full_name:               (session.customer_email || '').split('@')[0],
+      stripe_customer_id:      stripeCustomerId,
+      stripe_payment_method_id: stripePaymentMethodId,
     }, { onConflict: 'id' });
 
     if (playerError) console.error('Player upsert error:', playerError);
 
-    // Get pack id from packs table
+    // Get pack from packs table
     const { data: packRow, error: packError } = await supabase
       .from('packs')
       .select('id')
@@ -63,21 +78,24 @@ export async function POST(req) {
       ? new Date(Date.now() + config.expiryDays * 86400000).toISOString()
       : null;
 
-    // Check for any existing active pack to carry over remaining credits
+    // Check for existing active pack to carry over remaining credits
     const { data: existingPack } = await supabase
       .from('player_packs')
       .select('id, credits_total, credits_used')
       .eq('player_id', userId)
       .eq('status', 'active')
-      .single();
+      .maybeSingle();
 
-    const carryOver = existingPack ? Math.max(0, existingPack.credits_total - existingPack.credits_used) : 0;
+    const carryOver = existingPack
+      ? Math.max(0, existingPack.credits_total - existingPack.credits_used)
+      : 0;
 
-    // Mark any existing active pack as completed (handles renewals cleanly)
-    await supabase.from('player_packs')
-      .update({ status: 'completed', completed_at: new Date().toISOString() })
-      .eq('player_id', userId)
-      .eq('status', 'active');
+    // Mark existing active pack as completed
+    if (existingPack) {
+      await supabase.from('player_packs')
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .eq('id', existingPack.id);
+    }
 
     const { error: packInsertError } = await supabase.from('player_packs').insert({
       player_id:      userId,
@@ -93,17 +111,17 @@ export async function POST(req) {
     if (packInsertError) {
       console.error('Pack insert error:', packInsertError);
     } else {
-      console.log('Pack created successfully for', userId);
+      console.log('Pack created for', userId, 'carry over:', carryOver);
 
-      // Create contact in GHL and tag for welcome email workflow
+      // Create GHL contact
       await ghlUpsertContact({
         email:        session.customer_email || '',
         firstName:    (session.customer_email || '').split('@')[0],
         tags:         ['dsg-tennis', config.name === 'Discover' ? 'discover-purchased' : 'join10-purchased'],
         customFields: {
-          pack_type:          config.name,
-          credits_total:      String(config.credits),
-          pack_purchased_at:  new Date().toISOString().split('T')[0],
+          pack_type:         config.name,
+          credits_total:     String(config.credits + carryOver),
+          pack_purchased_at: new Date().toISOString().split('T')[0],
         },
       });
     }

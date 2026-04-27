@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { createClient } from '@supabase/supabase-js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
 const PACK_PRICES = {
   discover: process.env.STRIPE_PRICE_DISCOVER || 'price_1TOUF4CFcD2K4dxE8iBvYKal',
   join10:   process.env.STRIPE_PRICE_JOIN10   || 'price_1TOUGACFcD2K4dxEIJgFmwM2',
+};
+
+const PACK_AMOUNTS = {
+  discover: 12000, // $120 in cents
+  join10:   40000, // $400 in cents
 };
 
 export async function POST(req) {
@@ -13,10 +23,39 @@ export async function POST(req) {
   const priceId = PACK_PRICES[packId];
   if (!priceId) return NextResponse.json({ error: 'Invalid pack' }, { status: 400 });
 
-  const session = await stripe.checkout.sessions.create({
+  // Get or create Stripe customer so we can charge them later for auto-renewal
+  let stripeCustomerId = null;
+  try {
+    const { data: player } = await supabase
+      .from('players')
+      .select('stripe_customer_id')
+      .eq('id', userId)
+      .single();
+
+    if (player?.stripe_customer_id) {
+      stripeCustomerId = player.stripe_customer_id;
+    } else {
+      // Create new Stripe customer
+      const customer = await stripe.customers.create({
+        email,
+        metadata: { userId },
+      });
+      stripeCustomerId = customer.id;
+      // Save to DB immediately
+      await supabase.from('players').update({ stripe_customer_id: stripeCustomerId }).eq('id', userId);
+    }
+  } catch (e) {
+    console.error('Stripe customer creation error:', e.message);
+  }
+
+  // Calculate Stripe fee to pass to customer (1.75% + 30c for domestic AU cards)
+  const baseAmount = PACK_AMOUNTS[packId] || 0;
+  const stripeFee = Math.round(baseAmount * 0.0175 + 30);
+  const totalAmount = baseAmount + stripeFee;
+
+  const sessionParams = {
     mode: 'payment',
     payment_method_types: ['card'],
-    customer_email: email,
     line_items: [{ price: priceId, quantity: 1 }],
     metadata: { userId, packId },
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/welcome?email=${encodeURIComponent('{CHECKOUT_SESSION.customer_email}')}&pack=${packId}`,
@@ -25,7 +64,16 @@ export async function POST(req) {
       setup_future_usage: 'off_session',
       metadata: { userId, packId },
     },
-  });
+  };
 
+  // Attach customer if we have one
+  if (stripeCustomerId) {
+    sessionParams.customer = stripeCustomerId;
+    delete sessionParams.customer_email;
+  } else {
+    sessionParams.customer_email = email;
+  }
+
+  const session = await stripe.checkout.sessions.create(sessionParams);
   return NextResponse.json({ url: session.url });
 }

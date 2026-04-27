@@ -285,6 +285,21 @@ export default function PlayerApp({ user, playerName, playerData }) {
       fetch('/api/ghl-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ trigger:'discover_complete', email: user.email, firstName, data: { firstName } }) }).catch(()=>{});
     }
 
+    // Auto-renewal trigger — fires when Join 10 credits hit 0
+    if (creditsLeft <= 0 && packName === 'Join 10') {
+      const packId = packData?.packs?.name === 'Join 10' ? 'join10' : 'discover';
+      fetch('/api/auto-renew', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, packId }),
+      }).then(r => r.json()).then(result => {
+        if (result.ok) {
+          // Reload pack data after successful renewal
+          setTimeout(() => loadPackData(), 2000);
+        }
+      }).catch(() => {});
+    }
+
     setConfirming(false);
     setPview('success');
   }
