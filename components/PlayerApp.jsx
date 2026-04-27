@@ -103,6 +103,8 @@ export default function PlayerApp({ user, playerName, playerData }) {
     const built = [];
     const seenDays = new Set();
 
+    const now = new Date();
+
     for (let daysAhead = 0; daysAhead < 14; daysAhead++) {
       const d = new Date(today);
       d.setDate(today.getDate() + daysAhead);
@@ -111,10 +113,26 @@ export default function PlayerApp({ user, playerName, playerData }) {
       if (seenDays.has(dayOfWeek)) continue;
       const daySessions = data.filter(s => s.day_of_week === dayOfWeek);
       if (!daySessions.length) continue;
+
+      // For today, filter out sessions whose start time has already passed
+      const isToday = daysAhead === 0;
+      const availableSessions = isToday ? daySessions.filter(s => {
+        const timeParts = s.start_time.match(/(\d+):(\d+)(am|pm)/i);
+        if (!timeParts) return true;
+        let hours = parseInt(timeParts[1]);
+        const mins = parseInt(timeParts[2]);
+        if (timeParts[3].toLowerCase() === 'pm' && hours !== 12) hours += 12;
+        if (timeParts[3].toLowerCase() === 'am' && hours === 12) hours = 0;
+        const sessionStart = new Date(today);
+        sessionStart.setHours(hours, mins, 0, 0);
+        return sessionStart > now;
+      }) : daySessions;
+
+      if (!availableSessions.length) continue;
       seenDays.add(dayOfWeek);
       const dateStr = DAY_NAMES[dayOfWeek].slice(0,3) + " " + d.getDate() + " " + MONTHS[d.getMonth()];
       const dateKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      daySessions.forEach(s => {
+      availableSessions.forEach(s => {
         const booked = countMap[`${s.id}|${dateKey}`] || 0;
         built.push({ id: s.id, name: s.name, level: s.level, date: dateStr, day: DAY_NAMES[dayOfWeek], time: s.start_time, end: s.end_time, type: s.session_type, credits: s.credits_cost, spots: Math.max(0, s.capacity - booked), cap: s.capacity });
       });
