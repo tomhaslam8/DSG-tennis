@@ -13,11 +13,6 @@ const PACK_PRICES = {
   join10:   process.env.STRIPE_PRICE_JOIN10   || 'price_1TOUGACFcD2K4dxEIJgFmwM2',
 };
 
-const PACK_AMOUNTS = {
-  discover: 12000, // $120 in cents
-  join10:   40000, // $400 in cents
-};
-
 export async function POST(req) {
   const { packId, userId, email } = await req.json();
   const priceId = PACK_PRICES[packId];
@@ -48,15 +43,24 @@ export async function POST(req) {
     console.error('Stripe customer creation error:', e.message);
   }
 
-  // Calculate Stripe fee to pass to customer (1.75% + 30c for domestic AU cards)
-  const baseAmount = PACK_AMOUNTS[packId] || 0;
+  // Calculate Stripe processing fee to pass to customer (1.75% + 30c AU domestic)
+  const baseAmount = packId === 'join10' ? 40000 : 12000;
   const stripeFee = Math.round(baseAmount * 0.0175 + 30);
-  const totalAmount = baseAmount + stripeFee;
 
   const sessionParams = {
     mode: 'payment',
     payment_method_types: ['card'],
-    line_items: [{ price: priceId, quantity: 1 }],
+    line_items: [
+      { price: priceId, quantity: 1 },
+      {
+        price_data: {
+          currency: 'aud',
+          unit_amount: stripeFee,
+          product_data: { name: 'Processing fee' },
+        },
+        quantity: 1,
+      },
+    ],
     metadata: { userId, packId },
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/welcome?email=${encodeURIComponent('{CHECKOUT_SESSION.customer_email}')}&pack=${packId}`,
     cancel_url:  `${process.env.NEXT_PUBLIC_APP_URL}/purchase`,
