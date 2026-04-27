@@ -40,8 +40,8 @@ export default function PlayerApp({ user, playerName, playerData }) {
 
   async function loadLeaderboard() {
     const [monthly, allTime] = await Promise.all([
-      supabase.from('players').select('full_name, sessions_this_month, total_sessions, streak_weeks').order('sessions_this_month', { ascending: false }).limit(10),
-      supabase.from('players').select('full_name, sessions_this_month, total_sessions, streak_weeks').order('total_sessions', { ascending: false }).limit(10),
+      supabase.from('players').select('full_name, sessions_this_month, total_sessions, streak_weeks').order('sessions_this_month', { ascending: false }).limit(50),
+      supabase.from('players').select('full_name, sessions_this_month, total_sessions, streak_weeks').order('total_sessions', { ascending: false }).limit(50),
     ]);
     if (monthly.data) setLeaderboard(monthly.data);
     if (allTime.data) setHallOfFame(allTime.data);
@@ -472,21 +472,44 @@ export default function PlayerApp({ user, playerName, playerData }) {
                     <div style={{ fontSize:13, fontWeight:600, color:'#0a0a0a', marginBottom:4 }}>No one's on the board yet</div>
                     <div style={{ fontSize:12, color:'#1D9E75', fontWeight:500 }}>Book a session to be first →</div>
                   </div>
-                ) : (boardTab === 'monthly' ? leaderboard : hallOfFame).map((p, i) => {
-                  const nameParts = (p.full_name || 'Player').split(' ');
+                ) : (() => {
+                  const board = boardTab === 'monthly' ? leaderboard : hallOfFame;
                   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-                  const display = nameParts.length > 1 ? cap(nameParts[0]) + ' ' + nameParts[1][0].toUpperCase() + '.' : cap(nameParts[0]);
-                  const isMe = p.full_name === playerName;
-                  return (
-                    <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:10, background: isMe ? '#E1F5EE' : i===0 ? '#FFFDE7' : 'transparent', marginBottom:4 }}>
+                  const formatName = (name) => {
+                    const parts = (name || 'Player').split(' ');
+                    return parts.length > 1 ? cap(parts[0]) + ' ' + parts[1][0].toUpperCase() + '.' : cap(parts[0]);
+                  };
+                  const myIndex = board.findIndex(p => p.full_name === playerName);
+                  const top3 = board.slice(0, 3);
+                  const amInTop3 = myIndex <= 2 && myIndex !== -1;
+                  const myEntry = myIndex > 2 ? board[myIndex] : null;
+
+                  const renderRow = (p, i, isMyRow) => (
+                    <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:10, background: isMyRow ? '#E1F5EE' : i===0 ? '#FFFDE7' : 'transparent', marginBottom:4 }}>
                       <div style={{ fontSize:13, fontWeight:700, color: i===0?'#F9A825':i===1?'#9E9E9E':i===2?'#8D6E63':'#aaa', minWidth:20, textAlign:'center' }}>
-                        {i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}
+                        {i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`}
                       </div>
-                      <div style={{ flex:1, fontSize:13, fontWeight: isMe?600:400, color: isMe?'#085041':'#0a0a0a' }}>{display}{isMe?' (you)':''}</div>
-                      <div style={{ fontSize:12, fontWeight:600, color: isMe?'#0F6E56':'#888' }}>{boardTab==='monthly' ? (p.sessions_this_month||0) : (p.total_sessions||0)} session{((boardTab==='monthly'?(p.sessions_this_month||0):(p.total_sessions||0)) !== 1) ? 's' : ''}</div>
+                      <div style={{ flex:1, fontSize:13, fontWeight: isMyRow?600:400, color: isMyRow?'#085041':'#0a0a0a' }}>
+                        {formatName(p.full_name)}{isMyRow?' (you)':''}
+                      </div>
+                      <div style={{ fontSize:12, fontWeight:600, color: isMyRow?'#0F6E56':'#888' }}>
+                        {boardTab==='monthly' ? (p.sessions_this_month||0) : (p.total_sessions||0)} session{((boardTab==='monthly'?(p.sessions_this_month||0):(p.total_sessions||0)) !== 1) ? 's' : ''}
+                      </div>
                     </div>
                   );
-                })}
+
+                  return (
+                    <>
+                      {top3.map((p, i) => renderRow(p, i, p.full_name === playerName))}
+                      {!amInTop3 && myEntry && (
+                        <>
+                          <div style={{ borderTop:'0.5px solid #e8e8e8', margin:'4px 0' }} />
+                          {renderRow(myEntry, myIndex, true)}
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
 {bookings.filter(b=>b.status==='upcoming' && (!b.sessionDate || new Date(b.sessionDate) > new Date())).length > 0 && (
