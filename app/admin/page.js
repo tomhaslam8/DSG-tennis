@@ -139,7 +139,7 @@ export default function AdminDashboard() {
       credits_used:   0,
       social_credits: creditForm.packType === 'discover' ? 1 : 0,
       status:         'active',
-      auto_renew:     false,
+      auto_renew:     true,
       expires_at:     expiresAt,
     });
     setAddingCredits(false);

@@ -21,7 +21,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
   const [confirming, setConfirming] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [editingPhone, setEditingPhone] = useState(false);
-  const [autoRenew, setAutoRenew] = useState(null);
+  const [autoRenew, setAutoRenew] = useState(true);
   const [phoneInput, setPhoneInput] = useState('');
 
   const rawName = playerName || user?.email?.split('@')[0] || 'there';
@@ -133,6 +133,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
       .limit(1)
       .maybeSingle();
     setPackData(data);
+    if (data) setAutoRenew(data.auto_renew !== false);
     setLoading(false);
     if (data) {
       const creditsLeft = data.credits_total - data.credits_used;
