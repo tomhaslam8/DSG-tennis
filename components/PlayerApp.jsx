@@ -22,6 +22,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
   const [sessions, setSessions] = useState([]);
   const [editingPhone, setEditingPhone] = useState(false);
   const [autoRenew, setAutoRenew] = useState(true);
+  const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [phoneInput, setPhoneInput] = useState('');
 
   const rawName = playerName || user?.email?.split('@')[0] || 'there';
@@ -32,6 +33,8 @@ export default function PlayerApp({ user, playerName, playerData }) {
     loadLeaderboard();
     loadBookings();
     loadSessions();
+    // Show WhatsApp banner if never dismissed
+    if (!localStorage.getItem('wa_dismissed')) setShowWhatsApp(true);
     if (playerData) setLocalStats({ total: playerData.total_sessions||0, monthly: playerData.sessions_this_month||0 });
   }, [user]);
 

@@ -172,30 +172,13 @@ export default function Onboard() {
         )}
 
         {isLast && answers.play_goal && (
-          <>
-            <div style={{background:'#E1F5EE', borderRadius:12, padding:'14px 16px', marginTop:16, marginBottom:12, display:'flex', alignItems:'center', gap:12}}>
-              <div style={{fontSize:28, flexShrink:0}}>💬</div>
-              <div style={{flex:1}}>
-                <div style={{fontSize:13, fontWeight:600, color:'#085041', marginBottom:2}}>Join our WhatsApp community</div>
-                <div style={{fontSize:11, color:'#0F6E56', lineHeight:1.5}}>Stay connected, get session updates and meet your fellow players.</div>
-              </div>
-            </div>
-            <a
-              href="https://chat.whatsapp.com/BpE2dJstVfPAzpDoKcdHrz?mode=gi_t"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{display:'block', width:'100%', padding:'11px 0', borderRadius:12, background:'#25D366', color:'#fff', border:'none', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit', textAlign:'center', textDecoration:'none', marginBottom:8, boxSizing:'border-box'}}
-            >
-              Join WhatsApp group →
-            </a>
-            <button
-              onClick={handleSave}
-              disabled={loading}
-              style={{width:'100%',padding:13,borderRadius:12,background:loading?'#9FE1CB':'#1D9E75',color:'#fff',border:'none',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}
-            >
-              {loading ? "Setting up your account..." : "Let's play →"}
-            </button>
-          </>
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            style={{width:'100%',padding:13,borderRadius:12,background:loading?'#9FE1CB':'#1D9E75',color:'#fff',border:'none',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',marginTop:16}}
+          >
+            {loading ? "Setting up your account..." : "Let's play →"}
+          </button>
         )}
 
         {step > 0 && (
