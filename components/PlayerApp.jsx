@@ -21,6 +21,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
   const [confirming, setConfirming] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [editingPhone, setEditingPhone] = useState(false);
+  const [autoRenew, setAutoRenew] = useState(null);
   const [phoneInput, setPhoneInput] = useState('');
 
   const rawName = playerName || user?.email?.split('@')[0] || 'there';
@@ -205,6 +206,13 @@ export default function PlayerApp({ user, playerName, playerData }) {
 
   async function doConfirm() {
     if (confirming) return;
+    // Check for duplicate booking
+    const sessionDateKey = selected.date;
+    const alreadyBooked = bookings.some(b => b.status === 'upcoming' && b.name === selected.name && b.date === sessionDateKey);
+    if (alreadyBooked) {
+      alert("You're already booked into this session.");
+      return;
+    }
     setConfirming(true);
     const isSocial = selected.type === 'social';
     const isDiscover = packData?.packs?.name === 'Discover';
@@ -490,7 +498,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                             <div style={{ fontSize:12, fontWeight:500, color:'#0a0a0a' }}>{s.name}</div>
                             <div style={{ fontSize:11, color:'#888', marginTop:2 }}>{s.time}–{s.end} · {s.level}</div>
                             <div style={{ fontSize:11, marginTop:3, color: s.spots===0?'#E24B4A':!canAfford?'#854F0B':'#0F6E56', fontWeight:500 }}>
-                              {s.spots===0?'Full':!canAfford?'Not enough credits':`${s.spots} spot${s.spots!==1?'s':''} left`}
+                              {s.spots===0?'Full':!canAfford?<span onClick={()=>window.location.href='/purchase'} style={{cursor:'pointer',textDecoration:'underline'}}>Not enough credits — top up →</span>:`${s.spots} spot${s.spots!==1?'s':''} left`}
                             </div>
                           </div>
                           <div style={{ fontSize:10, padding:'2px 8px', borderRadius:20, background: s.type==='social'&&socialCredits>0?'#EEEDFE':s.credits===1?'#E1F5EE':'#EEEDFE', color: s.type==='social'&&socialCredits>0?'#3C3489':s.credits===1?'#0F6E56':'#3C3489', fontWeight:500, whiteSpace:'nowrap', flexShrink:0, marginLeft:8, marginTop:2 }}>{s.type === 'social' ? (socialCredits > 0 ? '1 social credit' : '1 credit') : s.credits === 1 ? '1 credit' : '1.5 credits'}</div>
@@ -629,6 +637,22 @@ export default function PlayerApp({ user, playerName, playerData }) {
               >
                 Sign out
               </button>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 0', borderTop:'0.5px solid #f0f0f0', marginTop:8 }}>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:500 }}>Auto-renew</div>
+                  <div style={{ fontSize:11, color:'#aaa', marginTop:2 }}>Automatically reload credits when pack runs out</div>
+                </div>
+                <button
+                  onClick={async () => {
+                    const newVal = !autoRenew;
+                    setAutoRenew(newVal);
+                    await supabase.from('player_packs').update({ auto_renew: newVal }).eq('id', packData.id);
+                  }}
+                  style={{ width:44, height:24, borderRadius:12, background: autoRenew ? '#1D9E75' : '#e0e0e0', border:'none', cursor:'pointer', position:'relative', transition:'background 0.2s', flexShrink:0 }}
+                >
+                  <div style={{ width:18, height:18, borderRadius:'50%', background:'#fff', position:'absolute', top:3, left: autoRenew ? 23 : 3, transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.2)' }} />
+                </button>
+              </div>
             </div>
           )}
 

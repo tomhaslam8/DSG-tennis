@@ -12,10 +12,9 @@ export async function GET(req) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Get all players with active packs
   const { data: players, error } = await supabase
     .from('players')
-    .select('id, streak_weeks');
+    .select('id, streak_weeks, play_frequency');
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -26,18 +25,20 @@ export async function GET(req) {
   let reset = 0;
 
   for (const player of players) {
-    // Check if they had any confirmed booking in the past 7 days
+    const weeklyGoal = parseInt(player.play_frequency) || 1;
+
+    // Count confirmed bookings in past 7 days
     const { data: recentBookings } = await supabase
       .from('bookings')
       .select('id')
       .eq('player_id', player.id)
       .eq('status', 'confirmed')
-      .gte('created_at', oneWeekAgo.toISOString())
-      .limit(1);
+      .gte('created_at', oneWeekAgo.toISOString());
 
-    const playedThisWeek = recentBookings && recentBookings.length > 0;
+    const bookingsThisWeek = recentBookings?.length || 0;
+    const hitGoal = bookingsThisWeek >= weeklyGoal;
 
-    if (playedThisWeek) {
+    if (hitGoal) {
       await supabase
         .from('players')
         .update({ streak_weeks: (player.streak_weeks || 0) + 1 })
@@ -52,6 +53,6 @@ export async function GET(req) {
     }
   }
 
-  console.log(`Streak cron: ${updated} incremented, ${reset} reset`);
+  console.log(`Streak cron: ${updated} incremented (hit goal), ${reset} reset`);
   return NextResponse.json({ success: true, updated, reset });
 }
