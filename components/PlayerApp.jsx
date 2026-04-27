@@ -369,7 +369,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
               {!packData ? (
                 <div style={{ background:'#f5f5f5', borderRadius:16, padding:16, marginBottom:10, textAlign:'center' }}>
                   <div style={{ fontSize:13, color:'#666', marginBottom:12 }}>You don't have an active pack yet.</div>
-                  <button onClick={() => window.location.href='/purchase'} style={{ padding:'10px 20px', borderRadius:12, background:'#1D9E75', color:'#fff', border:'none', fontSize:13, fontWeight:600, cursor:'pointer' }}>Get started</button>
+                  <button onClick={() => window.location.href='/purchase?expired=true'} style={{ padding:'10px 20px', borderRadius:12, background:'#1D9E75', color:'#fff', border:'none', fontSize:13, fontWeight:600, cursor:'pointer' }}>Get started</button>
                 </div>
               ) : (
                 <div style={{ background:'#E1F5EE', borderRadius:16, padding:14, marginBottom:10 }}>
@@ -505,7 +505,7 @@ export default function PlayerApp({ user, playerName, playerData }) {
                             <div style={{ fontSize:10, padding:'2px 8px', borderRadius:20, background: s.type==='social'&&socialCredits>0?'#EEEDFE':s.credits===1?'#E1F5EE':'#EEEDFE', color: s.type==='social'&&socialCredits>0?'#3C3489':s.credits===1?'#0F6E56':'#3C3489', fontWeight:500, whiteSpace:'nowrap', flexShrink:0, marginLeft:8, marginTop:2 }}>{s.type === 'social' ? (socialCredits > 0 ? '1 social credit' : '1 credit') : s.credits === 1 ? '1 credit' : '1.5 credits'}</div>
                           </button>
                           {!canAfford && s.spots > 0 && (
-                            <button onClick={() => window.location.href='/purchase'} style={{ width:'100%', padding:'8px 12px', borderRadius:8, background:'#0F6E56', color:'#fff', border:'none', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginTop:4 }}>
+                            <button onClick={() => window.location.href='/purchase?expired=true'} style={{ width:'100%', padding:'8px 12px', borderRadius:8, background:'#0F6E56', color:'#fff', border:'none', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginTop:4 }}>
                               Not enough credits — top up →
                             </button>
                           )}

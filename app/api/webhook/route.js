@@ -63,6 +63,16 @@ export async function POST(req) {
       ? new Date(Date.now() + config.expiryDays * 86400000).toISOString()
       : null;
 
+    // Check for any existing active pack to carry over remaining credits
+    const { data: existingPack } = await supabase
+      .from('player_packs')
+      .select('id, credits_total, credits_used')
+      .eq('player_id', userId)
+      .eq('status', 'active')
+      .single();
+
+    const carryOver = existingPack ? Math.max(0, existingPack.credits_total - existingPack.credits_used) : 0;
+
     // Mark any existing active pack as completed (handles renewals cleanly)
     await supabase.from('player_packs')
       .update({ status: 'completed', completed_at: new Date().toISOString() })
@@ -72,7 +82,7 @@ export async function POST(req) {
     const { error: packInsertError } = await supabase.from('player_packs').insert({
       player_id:      userId,
       pack_id:        packRow.id,
-      credits_total:  config.credits,
+      credits_total:  config.credits + carryOver,
       credits_used:   0,
       social_credits: config.socialCredits,
       status:         'active',
